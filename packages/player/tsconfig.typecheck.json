@@ -1,0 +1,16 @@
+{
+  // Typecheck-only — see packages/core/tsconfig.typecheck.json. Runs after
+  // `tsc -b`, which builds core's declarations that these sources import.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "references": [],
+  "exclude": [],
+  "include": ["src"]
+}

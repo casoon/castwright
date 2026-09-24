@@ -1,0 +1,138 @@
+---
+import { Callout, CodeBlock, Demo } from '@casoon/pages-theme/components';
+import Base from '@casoon/pages-theme/layouts/Base.astro';
+import { url } from '@casoon/pages-theme/url';
+import colours from '../demos/colours.terminal.yaml';
+import hero from '../demos/hero.terminal.yaml';
+import keys from '../demos/keys.terminal.yaml';
+import outputDelay from '../demos/output-delay.terminal.yaml';
+
+// Compiled by castwright's own Vite plugin during this build: `cast` is the
+// asciicast, `finalFrame` its end state as plain text. The player receives both
+// — the cast to play, the text as the accessibility fallback a visitor gets
+// before the script runs and if it never does.
+const demos = [
+  {
+    id: 'hero',
+    demo: hero,
+    title: 'Autoplay, looping',
+    source: `steps:
+  - run: pnpm add -D @casoon/castwright
+  - output: |
+      {green}✓{/} added 3 packages
+  - wait: 500
+  - run: castwright build demo.terminal.yaml`,
+  },
+  {
+    id: 'delay',
+    demo: outputDelay,
+    title: 'Output, line by line',
+    source: `- run: npm test
+- output: |
+    {green}✓{/} parser
+    {green}✓{/} compiler
+    {green}✓{/} player
+    {dim}3 passed{/}
+  delay: 400`,
+  },
+  {
+    id: 'keys',
+    demo: keys,
+    title: 'Keys and seeded jitter',
+    source: `seed: 7
+steps:
+  - type: npm ru
+    jitter: 0.4
+  - key: tab
+  - wait: 250
+  - type: "n build"
+  - key: enter`,
+  },
+  {
+    id: 'colours',
+    demo: colours,
+    title: 'Colour and style',
+    source: `- output: |
+    {red}red{/} {green}green{/} {yellow}yellow{/}
+    {bg-blue} on blue {/} {#f38ba8}#f38ba8{/}
+    {bold}bold{/} {dim}dim{/} {underline}underline{/}`,
+  },
+];
+---
+
+<Base
+  title="Live demo"
+  description="castwright running in the page: the same casts the test suite compiles, played by the real player."
+>
+  <h1>Live demo</h1>
+  <p class="lead">
+    Everything below is the player itself, running here. The casts were compiled during
+    this build by castwright's own Vite plugin, from the YAML shown next to each one.
+  </p>
+
+  <Callout type="tip">
+    Try the controls with the keyboard, and try the page with reduced motion switched on —
+    the demos then show their final frame immediately instead of animating, with the
+    controls still there for anyone who does want to watch.
+  </Callout>
+
+  {
+    demos.map(({ id, demo, title, source }) => (
+      <Demo
+        title={title}
+        lead="Compiled at build time, played live."
+        label={`Terminal demo: ${title}`}
+      >
+        <CodeBlock slot="controls" code={source} lang="yaml" />
+        {
+          /* The player, loaded from this site rather than a CDN, and from inside
+             the stage because that is the only place the theme permits a page's
+             own script. One registration covers every demo on the page. */
+          id === 'hero' && (
+            <script is:inline type="module" src={url('/castwright-player.js')} />
+          )
+        }
+        <castwright-demo id={`demo-${id}`} autoplay loop label={`Terminal demo: ${title}`}>
+          <script
+            type="application/json"
+            data-castwright-cast
+            is:inline
+            set:html={JSON.stringify(demo.cast)}
+          />
+          <pre>{demo.finalFrame}</pre>
+        </castwright-demo>
+      </Demo>
+    ))
+  }
+
+  <h2>Without the chrome</h2>
+  <p>
+    For a hero section you often want the terminal and nothing else. The controls are
+    still there — hover the demo, or tab to it — because a loop that never stops needs a
+    way to stop it.
+  </p>
+
+  <Demo title="Bare, looping" label="Bare terminal demo">
+    <CodeBlock
+      slot="controls"
+      code={'<TerminalDemo demo={demo} autoplay loop chrome="none" controls="hover" />'}
+      lang="astro"
+    />
+    <castwright-demo
+      id="demo-bare"
+      autoplay
+      loop
+      chrome="none"
+      controls="hover"
+      label="Bare terminal demo"
+    >
+      <script
+        type="application/json"
+        data-castwright-cast
+        is:inline
+        set:html={JSON.stringify(hero.cast)}
+      />
+      <pre>{hero.finalFrame}</pre>
+    </castwright-demo>
+  </Demo>
+</Base>

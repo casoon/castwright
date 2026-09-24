@@ -1,0 +1,13 @@
+version: 1
+terminal: { cols: 56, rows: 7 }
+defaults: { speed: 60 }
+steps:
+  - run: echo "typed at 60ms per character"
+  - output: "typed at 60ms per character\n"
+  - wait: 800
+  - type: "instant, "
+    speed: 0
+  - type: "then slow"
+    speed: 120
+  - key: enter
+  - wait: 1200

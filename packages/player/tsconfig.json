@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    // Browser library consumed by bundlers (Vite, esbuild, esm.sh), not by
+    // Node's resolver: "Bundler" honours xterm.js's `module` field, which is
+    // the ESM build. NodeNext would resolve its CJS `main` instead and break
+    // named imports at runtime.
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": []
+  },
+  // Tests are typechecked (tsconfig.typecheck.json) but never built: a
+  // compiled __tests__ tree in dist ends up in the published tarball.
+  "exclude": ["src/**/__tests__/**"],
+  "include": ["src"],
+  "references": [{ "path": "../core" }]
+}

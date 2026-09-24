@@ -1,0 +1,110 @@
+---
+// <TerminalDemo /> — an Astro wrapper around <castwright-demo>.
+//
+// What it does that hand-writing the element does not: inlines the compiled
+// cast as JSON (no fetch, no parser in the bundle), emits the final terminal
+// text as the light-DOM accessibility fallback, and reserves the right height
+// so hydration does not shift the page.
+//
+// The cast comes from an import, not a path string:
+//
+//   ---
+//   import demo from '../demos/install.terminal.yaml';
+//   import TerminalDemo from '@casoon/castwright-astro/TerminalDemo.astro';
+//   ---
+//   <TerminalDemo demo={demo} autoplay loop />
+//
+// A path string would have to be resolved relative to the *calling page*,
+// which `import.meta.glob` inside this component cannot do. An import is also
+// type-checked and fails the build when the file moves — see
+// docs/reference/player.md.
+
+export interface Props {
+  /** A `*.terminal.yaml` import, compiled by the castwright Vite plugin. */
+  demo?: { cast: unknown; finalFrame: string };
+  /** A pre-built `.cast` served as a static asset, fetched at runtime instead. */
+  src?: string;
+  autoplay?: boolean;
+  loop?: boolean;
+  loopDelay?: number;
+  poster?: number;
+  cols?: number;
+  rows?: number;
+  /** Accessible name. Defaults to the cast's title. */
+  label?: string;
+  /** Shown in the window chrome. Decorative. */
+  title?: string;
+  /** `none` drops the title bar with the traffic lights. */
+  chrome?: 'window' | 'none';
+  /**
+   * `hover` overlays the transport and reveals it on hover or keyboard focus —
+   * visually absent, but still a reachable pause control, which an autoplaying
+   * loop needs. `none` removes it entirely; only appropriate when the demo does
+   * not autoplay in a loop.
+   */
+  controls?: 'visible' | 'hover' | 'none';
+  class?: string;
+}
+
+const {
+  demo,
+  src,
+  autoplay = false,
+  loop = false,
+  loopDelay,
+  poster,
+  cols,
+  rows,
+  label,
+  title,
+  chrome,
+  controls,
+  class: className,
+} = Astro.props;
+
+if (!demo && !src) {
+  throw new Error(
+    '<TerminalDemo> needs either `demo` (a *.terminal.yaml import) or `src` (a .cast URL).',
+  );
+}
+
+const cast = demo?.cast as { header?: { width?: number; height?: number } } | undefined;
+const fallbackText = demo?.finalFrame ?? '';
+
+// Reserve the terminal's height so upgrading from the fallback to the live
+// terminal does not shift the page. 17px is xterm's default line height at its
+// default font size; the chrome and transport add a little more.
+const reservedHeight = cast?.header?.height ? `${cast.header.height * 17 + 24}px` : undefined;
+---
+
+<castwright-demo
+  class={className}
+  src={src}
+  autoplay={autoplay ? '' : undefined}
+  loop={loop ? '' : undefined}
+  loop-delay={loopDelay}
+  poster={poster}
+  cols={cols}
+  rows={rows}
+  label={label}
+  title-text={title}
+  chrome={chrome}
+  controls={controls}
+  style={reservedHeight ? `--castwright-reserved-height: ${reservedHeight}` : undefined}
+>
+  {demo && (
+    <script
+      type="application/json"
+      data-castwright-cast
+      is:inline
+      set:html={JSON.stringify(demo.cast)}
+    />
+  )}
+  <pre>{fallbackText}</pre>
+</castwright-demo>
+
+<script>
+  // Registers the custom element. Astro hoists and bundles this once per page,
+  // no matter how many demos it contains.
+  import '@casoon/castwright-player';
+</script>

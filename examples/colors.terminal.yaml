@@ -1,0 +1,17 @@
+version: 1
+
+terminal:
+  title: colour reference
+  cols: 60
+  rows: 20
+  theme: catppuccin-mocha
+
+steps:
+  - output: |
+      {black}black{/} {red}red{/} {green}green{/} {yellow}yellow{/}
+      {blue}blue{/} {magenta}magenta{/} {cyan}cyan{/} {white}white{/}
+      {bright-red}bright-red{/} {bright-green}bright-green{/}
+      {bg-blue}on blue{/} {bg-red}on red{/}
+      {#a6e3a1}true colour{/} {bold}bold{/} {dim}dim{/} {italic}italic{/} {underline}underline{/}
+      {green}nested {bold}bold-green{/} still green{/} plain
+  - wait: 1000

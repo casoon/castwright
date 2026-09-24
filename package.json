@@ -1,0 +1,35 @@
+{
+  "name": "castwright-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Declarative terminal demos for the web \u2014 monorepo root.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.26.0",
+  "scripts": {
+    "build": "pnpm -r --workspace-concurrency=1 run build",
+    "clean": "pnpm -r run clean",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "test": "vitest run",
+    "test:pack": "pnpm build && node scripts/pack-smoke-test.mjs",
+    "test:compat": "pnpm --filter @casoon/castwright build && node scripts/asciicast-compat-test.mjs",
+    "test:watch": "vitest",
+    "changeset": "changeset",
+    "release": "changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.14",
+    "@casoon/castwright": "workspace:*",
+    "@casoon/castwright-player": "workspace:*",
+    "@changesets/cli": "^3.0.3",
+    "@vitest/coverage-v8": "^3.2.4",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "name": "@casoon/castwright-astro",
+  "version": "0.1.0",
+  "description": "Astro integration for castwright \u2014 <TerminalDemo /> and automatic Vite plugin registration.",
+  "license": "MIT",
+  "type": "module",
+  "author": "CASOON",
+  "homepage": "https://github.com/casoon/castwright#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/casoon/castwright.git",
+    "directory": "packages/astro"
+  },
+  "keywords": [
+    "terminal",
+    "asciicast",
+    "astro",
+    "astro-component",
+    "demo"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./TerminalDemo.astro": "./src/TerminalDemo.astro",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src/TerminalDemo.astro"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@casoon/castwright": "workspace:*",
+    "@casoon/castwright-player": "workspace:*"
+  },
+  "devDependencies": {
+    "astro": "^7.3.4",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "astro": "^5.0.0 || ^6.0.0 || ^7.0.0"
+  }
+}

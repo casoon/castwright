@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": ["node"]
+  },
+  // Tests are typechecked (tsconfig.typecheck.json) but never built: a
+  // compiled __tests__ tree in dist ends up in the published tarball.
+  "exclude": ["src/**/__tests__/**"],
+  "include": ["src"]
+}

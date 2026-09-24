@@ -1,0 +1,15 @@
+version: 1
+terminal:
+  title: castwright
+  cols: 72
+  rows: 12
+  theme: catppuccin-mocha
+steps:
+  - run: pnpm add -D @casoon/castwright
+  - output: |
+      {green}✓{/} added 3 packages
+  - wait: 500
+  - run: castwright build demo.terminal.yaml
+  - output: |
+      {dim}dist/demo.cast{/}
+  - wait: 1500

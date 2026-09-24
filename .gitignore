@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.astro/
+.turbo/
+coverage/
+.DS_Store
+*.log
+*.tsbuildinfo
+
+# Local task and idea tracking, and any working notes — intentionally never
+# committed. Anything that belongs to the project itself goes in meta/ or docs/.
+plan/
+
+# Dev harness build output (the player's local Vite playground)
+packages/player/dev/*.cast
+
+# Playwright
+playwright-report/
+test-results/

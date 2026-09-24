@@ -1,0 +1,56 @@
+{
+  "name": "@casoon/castwright-player",
+  "version": "0.1.0",
+  "description": "<castwright-demo> \u2014 a real-VT web terminal player for castwright, built on xterm.js.",
+  "license": "MIT",
+  "type": "module",
+  "author": "CASOON",
+  "homepage": "https://github.com/casoon/castwright#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/casoon/castwright.git",
+    "directory": "packages/player"
+  },
+  "keywords": [
+    "terminal",
+    "asciicast",
+    "web-component",
+    "xterm",
+    "demo"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json",
+    "./standalone": {
+      "default": "./dist/standalone/castwright-player.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "generate:css": "node scripts/generate-xterm-css.mjs",
+    "prebuild": "node scripts/generate-xterm-css.mjs",
+    "build": "tsc -b && vite build --config vite.standalone.config.ts",
+    "typecheck": "tsc -b && tsc -p tsconfig.typecheck.json",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "dev": "vite",
+    "build:standalone": "vite build --config vite.standalone.config.ts"
+  },
+  "dependencies": {
+    "@xterm/xterm": "^6.0.0",
+    "@xterm/addon-fit": "^0.11.0"
+  },
+  "devDependencies": {
+    "@casoon/castwright": "workspace:*",
+    "typescript": "^5.9.3",
+    "happy-dom": "^20.14.5",
+    "vite": "^7.1.11"
+  }
+}

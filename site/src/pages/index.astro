@@ -1,0 +1,104 @@
+---
+import { compile, parse } from '@casoon/castwright';
+import {
+  Badge,
+  Badges,
+  BuildOutput,
+  Callout,
+  CodeBlock,
+  Facts,
+  Features,
+  Hero,
+  Install,
+  Quickstart,
+  Terminal,
+} from '@casoon/pages-theme/components';
+import Base from '@casoon/pages-theme/layouts/Base.astro';
+import basicSource from '../../../examples/basic.terminal.yaml?raw';
+import { ASTRO_USAGE, DEMO_YAML } from '../samples';
+
+// The hero's terminal is not a screenshot and not hand-written ANSI: it is the
+// byte stream castwright's own compiler produced from the file next to it,
+// during this build.
+const cast = compile(parse(basicSource, 'examples/basic.terminal.yaml'));
+const heroAnsi = cast.events
+  .filter((event): event is [number, 'o', string] => event[1] === 'o')
+  .map((event) => event[2])
+  .join('');
+---
+
+<Base>
+  <Hero
+    title="Terminal demos you write, not record."
+    lead="castwright compiles a small YAML file to asciicast v2 and plays it as a real terminal — real ANSI, real cursor movement, selectable text — with no headless browser anywhere in your build."
+  >
+    <Install
+      commands={[
+        { label: 'pnpm', command: 'pnpm add -D @casoon/castwright' },
+        { label: 'npm', command: 'npm i -D @casoon/castwright' },
+        { label: 'yarn', command: 'yarn add -D @casoon/castwright' },
+      ]}
+    />
+    <Badges>
+      <Badge>MIT</Badge>
+      <Badge>asciicast v2</Badge>
+      <Badge>xterm.js</Badge>
+      <Badge>WCAG 2.2 AA</Badge>
+    </Badges>
+    <Terminal slot="output" title="examples/basic.terminal.yaml" dots ansi={heroAnsi} />
+  </Hero>
+
+  <Callout type="note">
+    Pre-release. The packages are complete and tested but not on npm yet, so the install
+    commands above will not resolve until the first release. Everything on this site is
+    built from the repository as it stands.
+  </Callout>
+
+  <Facts
+    items={[
+      { value: '223', label: 'unit tests' },
+      { value: '40', label: 'browser tests, desktop and mobile' },
+      { value: '0', label: 'axe violations at WCAG 2.2 AA' },
+      { value: '0 kB', label: 'parser or compiler shipped to the browser' },
+    ]}
+  />
+
+  <Features
+    items={[
+      {
+        title: 'Authored, not performed',
+        body: 'No recording session to get right on the seventh take. Edit a line, rebuild, and the demo changes — the same way the rest of your documentation does.',
+      },
+      {
+        title: 'A real terminal, not a lookalike',
+        body: 'xterm.js interprets the bytes, so cursor movement, line rewrites and carriage returns behave as they would in a shell. Coloured spans in a <pre> cannot do that.',
+      },
+      {
+        title: 'Deterministic output',
+        body: 'The same input compiles to the same bytes on every machine. A generated .cast is a text file you commit and read in a diff, and typing jitter is seeded so it stays that way.',
+      },
+      {
+        title: 'Accessible by construction',
+        body: 'The element’s children are the terminal’s final text, generated at build time — real content before the script loads and if it never does. Reduced motion is honoured and there is always a pause control.',
+      },
+    ]}
+  />
+
+  <BuildOutput
+    caption="This is the file that produced the terminal at the top of the page, compiled during this build. No screenshots, nothing kept in step by hand."
+    file="examples/basic.terminal.yaml"
+  >
+    <CodeBlock code={DEMO_YAML} lang="yaml" title="demo.terminal.yaml" />
+  </BuildOutput>
+
+  <Quickstart
+    lead="Three steps from install to a demo on the page. The walkthrough, the DSL reference and the integration guides are in the documentation."
+    steps={[
+      'Register the Vite plugin, or the Astro integration that wraps it.',
+      'Write a <code>*.terminal.yaml</code> file describing the session.',
+      'Import it and hand it to <code>&lt;TerminalDemo&gt;</code>, or to the <code>&lt;castwright-demo&gt;</code> element directly.',
+    ]}
+  >
+    <CodeBlock code={ASTRO_USAGE} lang="astro" title="src/pages/index.astro" />
+  </Quickstart>
+</Base>

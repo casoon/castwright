@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>castwright player — dev harness</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 0; padding: 32px; background: #14141a; color: #e6e6ef; }
+      main { max-width: 860px; margin: 0 auto; display: grid; gap: 32px; }
+      h1 { font-size: 20px; font-weight: 600; }
+      h2 { font-size: 14px; font-weight: 500; color: #9a9ab0; margin: 0 0 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>castwright player — dev harness</h1>
+
+      <section>
+        <h2>autoplay + loop, fetched .cast</h2>
+        <castwright-demo src="/basic.cast" autoplay loop title-text="castwright" id="demo-basic">
+          <pre>$ npx casoon create my-app
+✓ Project ready</pre>
+        </castwright-demo>
+      </section>
+
+      <section>
+        <h2>colour reference, manual playback</h2>
+        <castwright-demo src="/colors.cast" title-text="colours" id="demo-colors">
+          <pre>colour reference</pre>
+        </castwright-demo>
+      </section>
+    </main>
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>

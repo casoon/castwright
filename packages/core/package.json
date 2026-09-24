@@ -1,0 +1,72 @@
+{
+  "name": "@casoon/castwright",
+  "version": "0.1.0",
+  "description": "Declarative terminal demos for the web \u2014 DSL parser, compiler to asciicast v2, CLI, and Vite plugin.",
+  "license": "MIT",
+  "type": "module",
+  "author": "CASOON",
+  "homepage": "https://github.com/casoon/castwright#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/casoon/castwright.git",
+    "directory": "packages/core"
+  },
+  "keywords": [
+    "terminal",
+    "asciicast",
+    "cli",
+    "demo",
+    "xterm"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "castwright": "./bin/castwright.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./vite": {
+      "types": "./dist/vite/index.d.ts",
+      "import": "./dist/vite/index.js"
+    },
+    "./package.json": "./package.json",
+    "./vite/client": {
+      "types": "./types/vite-client.d.ts"
+    }
+  },
+  "files": [
+    "bin",
+    "dist",
+    "types"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1",
+    "@xterm/headless": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.1.11",
+    "@types/node": "^22.20.4"
+  },
+  "peerDependencies": {
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0",
+    "@casoon/castwright-player": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    },
+    "@casoon/castwright-player": {
+      "optional": true
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "castwright-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "type-check": "astro check",
+    "prebuild": "node scripts/copy-player.mjs",
+    "predev": "node scripts/copy-player.mjs",
+    "check": "node ~/.claude/skills/casoon-pages/scripts/check-site.cjs http://localhost:4321/castwright/",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@casoon/pages-theme": "file:./vendor/pages-theme",
+    "astro": "^7.3.2",
+    "@casoon/castwright": "workspace:*",
+    "@casoon/castwright-player": "workspace:*"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/node": "^24.13.4",
+    "typescript": "^6.0.3",
+    "@playwright/test": "^1.63.0",
+    "@axe-core/playwright": "^4.13.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

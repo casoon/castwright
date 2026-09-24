@@ -1,0 +1,21 @@
+{
+  "name": "castwright-example-vite",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Plain Vite consumer \u2014 proves the castwright plugin is not accidentally Astro-coupled. Built in CI.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/assert-bundle.mjs",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .astro"
+  },
+  "dependencies": {
+    "@casoon/castwright": "workspace:*",
+    "@casoon/castwright-player": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.1.11"
+  }
+}

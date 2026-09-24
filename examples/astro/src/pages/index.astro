@@ -1,0 +1,40 @@
+---
+import TerminalDemo from '@casoon/castwright-astro/TerminalDemo.astro';
+import install from '../demos/install.terminal.yaml';
+import interactive from '../demos/interactive.terminal.yaml';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>castwright — Astro example</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 40px 20px;
+        background: #14141a;
+        color: #e6e6ef;
+        font-family: system-ui, sans-serif;
+      }
+      main { max-width: 900px; margin: 0 auto; display: grid; gap: 40px; }
+      h1 { font-size: 22px; }
+      h2 { font-size: 14px; font-weight: 500; color: #9a9ab0; margin: 0 0 10px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>castwright — Astro example</h1>
+
+      <section>
+        <h2>Compiled at build time, autoplay + loop</h2>
+        <TerminalDemo demo={install} autoplay loop title="castwright" />
+      </section>
+
+      <section>
+        <h2>Manual playback, poster at 1s</h2>
+        <TerminalDemo demo={interactive} poster={1} label="Interactive prompt demo" />
+      </section>
+    </main>
+  </body>
+</html>

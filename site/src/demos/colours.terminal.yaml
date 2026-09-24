@@ -1,0 +1,10 @@
+version: 1
+terminal: { cols: 56, rows: 9 }
+steps:
+  - output: |
+      {red}red{/} {green}green{/} {yellow}yellow{/} {blue}blue{/}
+      {bright-magenta}bright-magenta{/} {cyan}cyan{/}
+      {bg-blue} on blue {/} {#f38ba8}#f38ba8{/}
+      {bold}bold{/} {dim}dim{/} {italic}italic{/} {underline}underline{/}
+      {green}nested {bold}bold green{/} still green{/}
+  - wait: 1500

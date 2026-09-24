@@ -1,0 +1,12 @@
+version: 1
+terminal:
+  cols: 56
+  rows: 8
+  prompt: "{blue}~{/} {green}${/} "
+steps:
+  - run: cd my-app
+  - prompt: "{blue}~/my-app{/} {green}${/} "
+  - run: ls
+  - output: |
+      package.json  src/
+  - wait: 1500

@@ -1,0 +1,11 @@
+version: 1
+terminal: { cols: 56, rows: 9 }
+steps:
+  - run: npm test
+  - output: |
+      {green}✓{/} parser
+      {green}✓{/} compiler
+      {green}✓{/} player
+      {dim}3 passed{/}
+    delay: 400
+  - wait: 1200

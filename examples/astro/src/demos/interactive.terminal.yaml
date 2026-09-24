@@ -1,0 +1,25 @@
+version: 1
+seed: 1
+
+terminal:
+  title: interactive prompt
+  cols: 70
+  rows: 20
+
+defaults:
+  speed: 35
+  pause: 250
+
+steps:
+  - type: npm inst
+    jitter: 0.15
+  - key: tab
+  - wait: 150
+  - key: enter
+  - output: "Installing…\n"
+  - wait: 600
+  - prompt: "{green}➜{/} "
+  - run: npm run build
+  - output: |
+      {green}✓{/} Build complete
+  - wait: 1000

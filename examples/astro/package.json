@@ -1,0 +1,24 @@
+{
+  "name": "castwright-example-astro",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Minimal Astro consumer \u2014 proves the Vite plugin, the component and the element work together. Built in CI.",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && node scripts/assert-bundle.mjs",
+    "preview": "astro preview",
+    "typecheck": "astro check --minimumSeverity error",
+    "clean": "rm -rf dist .astro"
+  },
+  "dependencies": {
+    "@casoon/castwright": "workspace:*",
+    "@casoon/castwright-astro": "workspace:*",
+    "@casoon/castwright-player": "workspace:*",
+    "astro": "^7.3.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,18 @@
+version: 1
+
+terminal:
+  title: castwright
+  cols: 80
+  rows: 20
+
+steps:
+  - run: npx casoon create my-app
+  - output: |
+      {green}✓{/} Creating project
+      {green}✓{/} Installing dependencies
+      {green}✓{/} Project ready
+    delay: 250
+  - wait: 800
+  - run: cd my-app && npm run dev
+  - output: "{dim}ready in 412ms{/}\n\n  {cyan}➜{/}  Local:  http://localhost:4321/\n"
+  - wait: 2000

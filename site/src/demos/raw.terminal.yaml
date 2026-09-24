@@ -1,0 +1,7 @@
+version: 1
+terminal: { cols: 56, rows: 7 }
+steps:
+  - run: my-cli --version
+  - output:
+      raw: "\e[1;36mmy-cli\e[0m \e[2mv2.1.0\e[0m\r\n"
+  - wait: 1500

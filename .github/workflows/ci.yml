@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      # Builds the packages, both example consumers and the docs site. The
+      # examples assert against their real bundles that the parser and compiler
+      # never reach the browser.
+      - name: Build
+        run: pnpm build
+
+      # Installs the three tarballs into a throwaway project outside the
+      # workspace. Everything inside the workspace resolves through pnpm's
+      # symlinks, so this is the only check that sees what is actually published.
+      - name: Packaging
+        run: node scripts/pack-smoke-test.mjs
+
+  # The reference implementations, not our own reading of the specification.
+  # Pinned: a silent upgrade changing what these accept would make the result
+  # meaningless either way it went.
+  compat:
+    runs-on: ubuntu-latest
+    env:
+      AGG_VERSION: v1.9.0
+      ASCIINEMA_VERSION: v3.2.1
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install asciinema and agg
+        run: |
+          base=https://github.com/asciinema
+          curl -fsSL -o "$RUNNER_TEMP/agg" \
+            "$base/agg/releases/download/$AGG_VERSION/agg-x86_64-unknown-linux-gnu"
+          curl -fsSL -o "$RUNNER_TEMP/asciinema" \
+            "$base/asciinema/releases/download/$ASCIINEMA_VERSION/asciinema-x86_64-unknown-linux-gnu"
+          chmod +x "$RUNNER_TEMP/agg" "$RUNNER_TEMP/asciinema"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Build the compiler
+        run: pnpm --filter @casoon/castwright build
+
+      - name: asciicast compatibility
+        run: node scripts/asciicast-compat-test.mjs --require-tools
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Install Playwright browsers
+        run: pnpm --filter castwright-site exec playwright install --with-deps chromium
+
+      # Real xterm.js in a real browser: the player's behaviour, which a static
+      # crawl cannot see.
+      - name: Player end-to-end
+        run: pnpm --filter castwright-site run test:e2e
+
+      # The CASOON Pages check (axe in light and dark over every page, dead
+      # links, external requests, script count) is a local step: its script
+      # lives in the shared pages skill, not in this repository, so a runner has
+      # no copy of it. Run it before a release — see site/README.md.
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: site/playwright-report/
+          retention-days: 7

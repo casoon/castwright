@@ -1,0 +1,13 @@
+version: 1
+terminal: { cols: 56, rows: 7 }
+seed: 7
+steps:
+  - type: npm ru
+    jitter: 0.4
+  - key: tab
+  - wait: 250
+  - type: "n build"
+  - key: enter
+  - output: |
+      {green}✓{/} built in 412ms
+  - wait: 1200
