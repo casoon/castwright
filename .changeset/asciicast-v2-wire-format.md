@@ -1,7 +1,7 @@
 ---
 '@casoon/castwright': minor
 '@casoon/castwright-player': minor
-'@casoon/castwright-astro': minor
+'@casoon/astro-castwright': minor
 ---
 
 Write and read real asciicast v2, validate every numeric DSL value, and stop shipping tests

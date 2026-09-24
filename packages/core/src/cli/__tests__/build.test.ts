@@ -55,7 +55,7 @@ describe('runBuild', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('compiles a script to dist/<name>.cast', () => {
+  it('compiles a script to dist/<name>.cast', async () => {
     const file = join(dir, 'demo.terminal.yaml');
     writeFileSync(
       file,
@@ -63,7 +63,7 @@ describe('runBuild', () => {
       'utf8',
     );
 
-    const outPath = runBuild({ file, outDir: join(dir, 'dist'), format: 'cast' });
+    const outPath = await runBuild({ file, outDir: join(dir, 'dist'), format: 'cast' });
 
     expect(outPath).toBe(join(dir, 'dist', 'demo.cast'));
     expect(existsSync(outPath)).toBe(true);
@@ -72,23 +72,38 @@ describe('runBuild', () => {
     expect(content).toContain('"hi"');
   });
 
-  it('creates the output directory if it does not exist', () => {
+  it('creates the output directory if it does not exist', async () => {
     const file = join(dir, 'demo.terminal.yaml');
     writeFileSync(file, 'version: 1\nterminal: { cols: 80, rows: 24 }\nsteps: []\n', 'utf8');
 
-    const outPath = runBuild({ file, outDir: join(dir, 'nested', 'dist'), format: 'cast' });
+    const outPath = await runBuild({ file, outDir: join(dir, 'nested', 'dist'), format: 'cast' });
     expect(existsSync(outPath)).toBe(true);
   });
 
-  it('rejects an unknown --format', () => {
+  it('rejects an unknown --format', async () => {
     const file = join(dir, 'demo.terminal.yaml');
     writeFileSync(file, 'version: 1\nterminal: { cols: 80, rows: 24 }\nsteps: []\n', 'utf8');
 
-    expect(() => runBuild({ file, outDir: dir, format: 'svg' })).toThrow(CliUsageError);
-    expect(() => runBuild({ file, outDir: dir, format: 'svg' })).toThrow(/unknown --format/);
+    await expect(runBuild({ file, outDir: dir, format: 'png' })).rejects.toThrow(CliUsageError);
+    await expect(runBuild({ file, outDir: dir, format: 'png' })).rejects.toThrow(
+      /unknown --format/,
+    );
   });
 
-  it('propagates a positioned parse error for an invalid script', () => {
+  it('writes an svg', async () => {
+    const file = join(dir, 'demo.terminal.yaml');
+    writeFileSync(
+      file,
+      'version: 1\nterminal: { cols: 40, rows: 5 }\nsteps:\n  - output: "hi"\n',
+      'utf8',
+    );
+
+    const outPath = await runBuild({ file, outDir: dir, format: 'svg' });
+    expect(outPath).toBe(join(dir, 'demo.svg'));
+    expect(readFileSync(outPath, 'utf8')).toMatch(/^<svg /);
+  });
+
+  it('propagates a positioned parse error for an invalid script', async () => {
     const file = join(dir, 'bad.terminal.yaml');
     writeFileSync(
       file,
@@ -96,6 +111,6 @@ describe('runBuild', () => {
       'utf8',
     );
 
-    expect(() => runBuild({ file, outDir: dir, format: 'cast' })).toThrow(/no primary key/);
+    await expect(runBuild({ file, outDir: dir, format: 'cast' })).rejects.toThrow(/no primary key/);
   });
 });

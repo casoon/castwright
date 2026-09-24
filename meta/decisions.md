@@ -118,14 +118,15 @@ explicitly separate playground entry point.
 ## Three published packages
 
 `@casoon/castwright` (parser, compiler, themes, and the `castwright` bin),
-`@casoon/castwright-player` (xterm.js, browser only), `@casoon/castwright-astro`
+`@casoon/castwright-player` (xterm.js, browser only), `@casoon/astro-castwright`
 (Vite plugin and component).
 
 *Reason:* the cut follows the runtime boundary — pure/Node, browser, framework — and
 nothing else. A separate CLI package was considered and rejected: it is a few hundred
 lines over an arg parser, and a package costs a release, a changelog and a support
 surface. Names were additionally reserved for `-svg`, `-video` and `-tape`; reserving is
-free, shipping is not, and those may never exist.
+free, shipping is not, and those may never exist. The Astro package is `astro-castwright`, not
+`castwright-astro`, to match CASOON's other Astro integrations (`@casoon/astro-*`).
 
 *Consequence:* `player` has **no runtime dependency** on `core`. A cast is
 self-describing — the header carries size, title and palette — so the player needs only
@@ -187,3 +188,16 @@ keywords and the CLI's own output.
 
 *Consequence:* no mixed-language files. Early German working notes stayed out of the
 repository rather than being carried along as dead weight.
+
+## SVG export built, GIF/MP4 delegated to agg
+
+`--format svg` is castwright's own renderer on `@xterm/headless`;
+`--format gif` shells out to `agg`, `--format mp4` additionally to `ffmpeg`.
+
+*Reason:* `svg-term-cli` was evaluated first, as planned, and failed on concrete points:
+it ignores the theme in the cast header (renders its own fixed palette), drops italic and
+dim, positions text without `textLength` so columns shear with the viewer's font, and has
+been unmaintained since 2022 with deprecated dependencies (including an `xmldom` with a
+known CVE). `agg` passed: it reads the header theme and renders bold, italic, dim and
+underline correctly, so rasterising ourselves would only duplicate it. Both tools stay
+external and are never bundled.

@@ -17,8 +17,10 @@ export function computeScale(availableWidth: number, naturalWidth: number): numb
 /**
  * Measures the unscaled terminal, then scales it to the available width and
  * sets the container's height to match, so the layout reserves the right space.
+ * Also publishes the natural width on the host, so the window frame hugs the
+ * terminal instead of stretching across a wide page.
  */
-export function fitToWidth(screen: HTMLElement, scaler: HTMLElement): void {
+export function fitToWidth(host: HTMLElement, screen: HTMLElement, scaler: HTMLElement): void {
   scaler.style.transform = '';
   const naturalWidth = scaler.offsetWidth;
   const naturalHeight = scaler.offsetHeight;
@@ -37,9 +39,10 @@ export function fitToWidth(screen: HTMLElement, scaler: HTMLElement): void {
   scaler.style.transform = scale === 1 ? '' : `scale(${scale})`;
   screen.style.height = `${Math.ceil(naturalHeight * scale)}px`;
 
-  // At natural size the terminal can be narrower than the frame, which looks
-  // lopsided; centre it. When scaled it already fills the width exactly, and
-  // centring an unscaled layout box whose paint is smaller would push the
-  // visible terminal off to one side.
-  scaler.style.marginInline = scale === 1 ? 'auto' : '0';
+  // The host caps its max-width at this (see styles.ts), so on a wide page the
+  // frame ends where the terminal does. A cap rather than a width: the host
+  // still shrinks with a narrow container, which is what triggers the scaling
+  // above, and the value does not depend on the host's current size, so the
+  // ResizeObserver cannot feed back into it.
+  host.style.setProperty('--castwright-natural-width', `${naturalWidth + padding}px`);
 }

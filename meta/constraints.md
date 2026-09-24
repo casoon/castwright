@@ -68,9 +68,9 @@ that the parser and compiler are absent, so this stays true rather than being as
 
 These are **not** verified and must be settled before they harden into constraints:
 
-- Whether a self-built SVG exporter is needed at all, or whether `svg-term-cli` — which
-  already consumes asciicast — is good enough to delegate to. If it is built, whether it
-  can hit acceptable fidelity with system monospace fonts or must embed a webfont.
+- Whether the SVG exporter's pinned `textLength` holds up with system monospace fonts
+  across Safari, Firefox and GitHub's image proxy, or a subsetted webfont has to be
+  embedded. Verified in Chromium only.
 - Whether xterm.js's DOM renderer (the default, and what the player currently uses) is
   fast enough on low-end mobile. The documentation site renders up to six demos on one
   page, but only the ones scrolled into view are ever instantiated, which is the main

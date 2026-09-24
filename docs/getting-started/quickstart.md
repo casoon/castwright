@@ -35,7 +35,7 @@ steps:
 
 ```astro
 ---
-import TerminalDemo from '@casoon/castwright-astro/TerminalDemo.astro';
+import TerminalDemo from '@casoon/astro-castwright/TerminalDemo.astro';
 import hello from '../demos/hello.terminal.yaml';
 ---
 

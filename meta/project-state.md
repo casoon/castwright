@@ -26,7 +26,7 @@ terminal in a browser. Nothing is on npm yet.
 | `meta/` | This documentation — maintainer-facing, not rendered into the site. Committed. |
 | `packages/core` | `@casoon/castwright`. Parser, compiler, themes, the `castwright` CLI (`build`, `validate`, `dev`) and the Vite plugin. |
 | `packages/player` | `@casoon/castwright-player`. `<castwright-demo>`, built on xterm.js. Declares core as a type-only `devDependency` — there is no runtime edge. |
-| `packages/astro` | `@casoon/castwright-astro`. Integration plus `TerminalDemo.astro`. |
+| `packages/astro` | `@casoon/astro-castwright`. Integration plus `TerminalDemo.astro`. |
 | `docs/` | The public documentation, rendered by the site at `/docs/`. |
 | `site/` | The project page, built from the shared CASOON Pages theme: start page, docs, showcase, live demo, changelog. See `site/README.md`. |
 | `examples/` | `*.terminal.yaml` files as the parser's and compiler's test corpus, plus `examples/astro` and `examples/vite` — two consumer projects built in CI that assert the parser never reaches the browser. |
@@ -41,8 +41,6 @@ See [architecture.md](architecture.md) for how the pieces fit together.
   `NPM_TOKEN` secret and merging the first "Version Packages" PR.
 - **Deployment.** The docs site builds but is not deployed anywhere; the host is still
   an open choice.
-- **SVG and GIF export.** `svg-term-cli` and `agg` already consume asciicast, so those
-  items start by evaluating delegation rather than writing a renderer.
 - **`exec:` mode** (running real commands through a PTY) and **VHS `.tape` input**.
 
 ## Stack
@@ -79,12 +77,12 @@ All of this is in place (see [decisions.md](decisions.md) for the reasoning):
 ## The V1 surface
 
 ```bash
-pnpm add -D @casoon/castwright @casoon/castwright-astro @casoon/castwright-player
+pnpm add -D @casoon/castwright @casoon/astro-castwright @casoon/castwright-player
 ```
 
 ```astro
 ---
-import TerminalDemo from '@casoon/castwright-astro/TerminalDemo.astro';
+import TerminalDemo from '@casoon/astro-castwright/TerminalDemo.astro';
 import demo from '../demos/install.terminal.yaml';
 ---
 <TerminalDemo demo={demo} autoplay loop />

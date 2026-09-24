@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@casoon/castwright": "workspace:*",
-    "@casoon/castwright-astro": "workspace:*",
+    "@casoon/astro-castwright": "workspace:*",
     "@casoon/castwright-player": "workspace:*",
     "astro": "^7.3.4"
   },

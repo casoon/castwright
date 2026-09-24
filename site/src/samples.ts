@@ -22,7 +22,7 @@ steps:
 
 export const ASTRO_USAGE = [
   '---',
-  "import TerminalDemo from '@casoon/castwright-astro/TerminalDemo.astro';",
+  "import TerminalDemo from '@casoon/astro-castwright/TerminalDemo.astro';",
   "import demo from '../demos/install.terminal.yaml';",
   '---',
   '',

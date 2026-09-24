@@ -34,7 +34,7 @@ steps:
 
 ```astro
 ---
-import TerminalDemo from '@casoon/castwright-astro/TerminalDemo.astro';
+import TerminalDemo from '@casoon/astro-castwright/TerminalDemo.astro';
 import demo from '../demos/demo.terminal.yaml';
 ---
 <TerminalDemo demo={demo} autoplay loop />
@@ -46,7 +46,7 @@ import demo from '../demos/demo.terminal.yaml';
 |---|---|---|---|
 | [asciinema](https://asciinema.org/) | Record a real session | Real VT | Mature player |
 | [VHS](https://github.com/charmbracelet/vhs) | Declarative `.tape` | Real VT, via headless Chrome | GIF only |
-| **castwright** | Declarative YAML, compiled | Real VT (xterm.js) | Framework-agnostic player |
+| **castwright** | Declarative YAML, compiled | Real VT (xterm.js) | Framework-agnostic player, animated SVG, GIF/MP4 |
 
 Authored rather than recorded, deterministic (same input, same bytes — a compiled cast is
 a text file you can commit and read in a diff), browser-free at build time, and web-native
@@ -62,12 +62,12 @@ the authoring language, the compiler, the player and the exporters.
 |---|---|
 | [`@casoon/castwright`](packages/core) | Parser, compiler, the `castwright` CLI, and the Vite plugin |
 | [`@casoon/castwright-player`](packages/player) | `<castwright-demo>` — the web component |
-| [`@casoon/castwright-astro`](packages/astro) | Astro integration and `<TerminalDemo />` |
+| [`@casoon/astro-castwright`](packages/astro) | Astro integration and `<TerminalDemo />` |
 
 ## Install
 
 ```bash
-pnpm add -D @casoon/castwright @casoon/castwright-astro @casoon/castwright-player
+pnpm add -D @casoon/castwright @casoon/astro-castwright @casoon/castwright-player
 ```
 
 Outside Astro, drop the middle one — the Vite plugin covers SvelteKit, Nuxt, Remix,
@@ -105,6 +105,8 @@ With no bundler at all, one script tag is the whole setup:
 
 ```bash
 castwright build demo.terminal.yaml     # → dist/demo.cast
+castwright build demo.terminal.yaml --format svg   # animated SVG for a README, no JS
+castwright build demo.terminal.yaml --format gif   # via agg; mp4 via agg + ffmpeg
 castwright validate demos/*.terminal.yaml
 castwright dev demo.terminal.yaml       # watch and reload while authoring
 ```
@@ -134,9 +136,8 @@ The source of those pages is [`docs/`](docs/); the site that renders them is
 
 ## Status
 
-Pre-release, and not yet published to npm. The parser, compiler, CLI, player, Vite plugin
-and Astro integration all work; SVG and GIF export are deliberately deferred, since
-`svg-term-cli` and `agg` already consume asciicast.
+Pre-release, and not yet published to npm. The parser, compiler, CLI, player, Vite plugin,
+Astro integration and the SVG, GIF and MP4 exporters all work.
 
 [`meta/`](meta/project-state.md) holds the maintainer-facing documentation: current state,
 architecture, decisions and constraints.

@@ -1,4 +1,4 @@
-import castwright from '@casoon/castwright-astro';
+import castwright from '@casoon/astro-castwright';
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({

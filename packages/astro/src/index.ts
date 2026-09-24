@@ -1,4 +1,4 @@
-// @casoon/castwright-astro — the Astro-specific ergonomics on top of the
+// @casoon/astro-castwright — the Astro-specific ergonomics on top of the
 // framework-agnostic pieces.
 //
 // This package is deliberately thin: the Vite plugin in @casoon/castwright
@@ -26,7 +26,7 @@ export type { CastwrightPluginOptions };
  *
  * ```js
  * // astro.config.mjs
- * import castwright from '@casoon/castwright-astro';
+ * import castwright from '@casoon/astro-castwright';
  * export default defineConfig({ integrations: [castwright()] });
  * ```
  */
@@ -34,7 +34,7 @@ export default function castwrightIntegration(
   options: CastwrightPluginOptions = {},
 ): AstroIntegrationLike {
   return {
-    name: '@casoon/castwright-astro',
+    name: '@casoon/astro-castwright',
     hooks: {
       'astro:config:setup': ({ updateConfig }) => {
         updateConfig({ vite: { plugins: [castwright(options)] } });

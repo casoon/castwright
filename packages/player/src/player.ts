@@ -86,7 +86,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
   // gives the element a different width.
   const fit = () => {
     terminal.fit?.();
-    fitToWidth(chrome.screen, chrome.scaler);
+    fitToWidth(host, chrome.screen, chrome.scaler);
     // The pre-hydration height reservation has done its job; the measured
     // height is authoritative from here, and keeping the estimate would leave a
     // gap whenever the terminal is scaled down to fit a narrow screen.

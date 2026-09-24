@@ -1,4 +1,4 @@
-# @casoon/castwright-astro
+# @casoon/astro-castwright
 
 The Astro integration for [castwright](https://github.com/casoon/castwright): automatic Vite
 plugin registration and a `<TerminalDemo />` component.
@@ -12,12 +12,12 @@ yourself.
 ## Install
 
 ```sh
-pnpm add @casoon/castwright-astro
+pnpm add @casoon/astro-castwright
 ```
 
 ```js
 // astro.config.mjs
-import castwright from '@casoon/castwright-astro';
+import castwright from '@casoon/astro-castwright';
 
 export default defineConfig({ integrations: [castwright()] });
 ```
@@ -26,7 +26,7 @@ export default defineConfig({ integrations: [castwright()] });
 
 ```astro
 ---
-import TerminalDemo from '@casoon/castwright-astro/TerminalDemo.astro';
+import TerminalDemo from '@casoon/astro-castwright/TerminalDemo.astro';
 import demo from '../demos/install.terminal.yaml';
 ---
 

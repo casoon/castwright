@@ -9,11 +9,11 @@ Errors go to stderr, results to stdout, so the commands compose.
 ## build
 
 ```
-castwright build <file> [-o <dir>] [--format <name>]
+castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4]
 ```
 
-Compiles a `*.terminal.yaml` to `<dir>/<name>.cast` and prints the path. `-o` defaults to
-`dist`; `--format` currently accepts `cast`.
+Compiles a `*.terminal.yaml` to `<dir>/<name>.<format>` and prints the path. `-o` defaults
+to `dist`, `--format` to `cast`.
 
 ```
 $ castwright build demo.terminal.yaml
@@ -22,6 +22,30 @@ dist/demo.cast
 
 The output is asciicast v2 — newline-delimited JSON — and it is deterministic: the same
 input compiles to the same bytes on every machine.
+
+### Formats
+
+| Format | Output | Needs |
+|---|---|---|
+| `cast` | asciicast v2, for the player and the asciinema tools | — |
+| `svg` | One self-contained animated SVG: real text, no script, loops | — |
+| `gif` | Animated GIF, rendered by [agg](https://github.com/asciinema/agg) | `agg` on `PATH` |
+| `mp4` | h264 video, agg's GIF re-encoded by ffmpeg | `agg` and `ffmpeg` on `PATH` |
+
+`svg` is the one for a README or a page that should not load a player. The animation is
+pure CSS with no script and no external references, so it plays inside a plain `<img>` —
+which is how GitHub embeds images in a README. The
+theme, bold, italic, dim and underline come across; the column grid is pinned with
+`textLength`, so a different monospace font on the viewer's machine changes glyph shapes
+but never alignment. `prefers-reduced-motion` shows the finished screen.
+
+```markdown
+![castwright demo](docs/demo.svg)
+```
+
+`gif` and `mp4` are for places that take nothing else — social posts, slides. castwright
+does not rasterise anything itself; agg does, using the theme in the cast header, and a
+missing tool is reported with an install hint and a non-zero exit.
 
 ## validate
 
@@ -70,8 +94,6 @@ The output is a standard asciicast, so the rest of that ecosystem works on it:
 ```bash
 castwright build demo.terminal.yaml
 asciinema play dist/demo.cast
-svg-term --in dist/demo.cast --out demo.svg --window
-agg dist/demo.cast demo.gif
 ```
 
 The header carries the spec's own field names — `fg`, `bg` and a colon-joined `palette`

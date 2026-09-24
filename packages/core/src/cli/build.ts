@@ -1,4 +1,4 @@
-// `castwright build <file> [-o dist] [--format cast]` — see docs/reference/cli.md.
+// `castwright build <file> [-o dist] [--format cast|svg|gif|mp4]` — see docs/reference/cli.md.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,7 +14,7 @@ export interface BuildOptions {
   format: string;
 }
 
-const USAGE = 'usage: castwright build <file> [-o <dir>] [--format <name>]';
+const USAGE = 'usage: castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4]';
 
 export function parseBuildArgs(args: string[]): BuildOptions {
   let file: string | undefined;
@@ -48,7 +48,7 @@ export function parseBuildArgs(args: string[]): BuildOptions {
 }
 
 /** @returns the written file's path, for the caller to print to stdout. */
-export function runBuild(options: BuildOptions): string {
+export async function runBuild(options: BuildOptions): Promise<string> {
   const outputFormat = getFormat(options.format);
   if (!outputFormat) {
     throw new CliUsageError(
@@ -61,10 +61,10 @@ export function runBuild(options: BuildOptions): string {
     onWarning: (message, line, column) => printWarning(options.file, message, line, column),
   });
   const cast = compile(script);
-  const content = outputFormat.render(cast);
+  const content = await outputFormat.render(cast);
 
   mkdirSync(options.outDir, { recursive: true });
   const outPath = join(options.outDir, `${outputBaseName(options.file)}.${outputFormat.extension}`);
-  writeFileSync(outPath, content, 'utf8');
+  writeFileSync(outPath, content);
   return outPath;
 }
