@@ -68,11 +68,9 @@ that the parser and compiler are absent, so this stays true rather than being as
 
 These are **not** verified and must be settled before they harden into constraints:
 
-- Whether the SVG exporter's column alignment holds in Firefox. Measured in Chromium and
-  WebKit (every glyph within 0.25 of 8.4 units of its column) and seen animating in a
-  GitHub README; Playwright's Firefox does not start on the development machine.
 - Whether an SVG embedded as `<img>` honours `prefers-reduced-motion`. It does inline in
-  Chromium and WebKit; the emulation used in testing does not reach image documents.
+  Chromium and WebKit; the emulation used in testing does not reach image documents, and
+  a manual check in Firefox 156 did not pick up the macOS setting.
 - Whether xterm.js's DOM renderer (the default, and what the player currently uses) is
   fast enough on low-end mobile. The documentation site renders up to six demos on one
   page, but only the ones scrolled into view are ever instantiated, which is the main

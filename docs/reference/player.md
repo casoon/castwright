@@ -156,7 +156,22 @@ violations in the console; the terminal renders correctly regardless. Where the 
 allows inline styles, both repairs change nothing.
 
 The script itself is an ordinary module script, so `script-src 'self'` covers it when it
-is served from the site. Verified in Chromium and WebKit.
+is served from the site. Verified in Chromium, Safari and Firefox.
+
+<Callout type="caution">
+**Firefox and 24-bit colour.** Firefox will not let a refused `style` attribute be
+re-applied through the CSSOM with the same value, so under a strict `style-src` cells in
+24-bit colour (`{#a6e3a1}`, `show:` highlighting) fall back to the default foreground.
+Layout, the theme and the 16-colour palette are unaffected. Allowing inline style
+*attributes* — not `<style>` elements — restores them:
+
+```
+style-src 'self' …; style-src-attr 'unsafe-inline'
+```
+
+Style attributes cannot load resources or match elements, so this is a much narrower
+allowance than `'unsafe-inline'` on `style-src`.
+</Callout>
 
 If the page cannot load a script at all, the animated SVG export
 (`castwright build --format svg`) needs neither: embedded as an `<img>`, it is subject
