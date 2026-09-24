@@ -80,6 +80,23 @@ Biome disagreeing with something else rather than about taste:
   Astro file's frontmatter, not the template that uses those bindings, so every one of
   its reports there is a false positive.
 
+## Releasing
+
+Versioning is automated, publishing is not. Pushing to `main` with pending changesets
+opens a "Version Packages" pull request; merging it bumps the versions and writes the
+changelogs. **`npm publish` is then run by hand, from a maintainer's machine** — the
+release workflow holds no npm token and never runs `changeset publish`.
+
+```bash
+git switch main && git pull
+pnpm install && pnpm build
+pnpm test && pnpm test:pack && pnpm test:compat
+pnpm release          # changeset publish
+```
+
+The trade-off this accepts: npm provenance attestations can only be produced by a CI
+publish, so packages released this way do not carry one.
+
 ## Commits
 
 Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`), scoped by

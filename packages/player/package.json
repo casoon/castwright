@@ -1,6 +1,6 @@
 {
   "name": "@casoon/castwright-player",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "<castwright-demo> \u2014 a real-VT web terminal player for castwright, built on xterm.js.",
   "license": "MIT",
   "type": "module",

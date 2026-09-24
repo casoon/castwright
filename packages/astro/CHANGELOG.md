@@ -1,6 +1,6 @@
 # @casoon/astro-castwright
 
-## 0.2.0
+## 0.1.0
 
 ### Minor Changes
 
@@ -59,5 +59,5 @@
 ### Patch Changes
 
 - Updated dependencies [2a19c55]
-  - @casoon/castwright@0.2.0
-  - @casoon/castwright-player@0.2.0
+  - @casoon/castwright@0.1.0
+  - @casoon/castwright-player@0.1.0

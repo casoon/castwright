@@ -1,6 +1,6 @@
 {
   "name": "@casoon/astro-castwright",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "Astro integration for castwright \u2014 <TerminalDemo /> and automatic Vite plugin registration.",
   "license": "MIT",
   "type": "module",

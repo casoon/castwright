@@ -37,10 +37,8 @@ See [architecture.md](architecture.md) for how the pieces fit together.
 ### What is deliberately not done
 
 - **Publishing.** Nothing is on npm beyond the `castwright` name reservation. The
-  release workflow and the pack smoke test are in place; the remaining step is a
-  `NPM_TOKEN` secret and merging the first "Version Packages" PR.
-- **Deployment.** The docs site builds but is not deployed anywhere; the host is still
-  an open choice.
+  versions are set to `0.1.0` and the changelogs written, so the remaining step is a
+  maintainer running `pnpm release` locally — see "Releasing" in conventions.md.
 - **`exec:` mode** (running real commands through a PTY) and **VHS `.tape` input**.
 
 ## Stack
@@ -57,7 +55,8 @@ All of this is in place (see [decisions.md](decisions.md) for the reasoning):
   TypeScript project references, Changesets with fixed versioning across the three
   packages, GitHub Actions CI (typecheck → lint → test → build → packaging, plus
   separate jobs for asciicast compatibility and for Playwright + axe against the built
-  docs site) and a Changesets release workflow publishing with npm provenance. The workspace root also carries
+  docs site), a Changesets workflow that opens the version PR, and a Pages workflow that
+  deploys the project page on every push to `main`. Publishing is deliberately manual. The workspace root also carries
   `devDependencies` on `@casoon/castwright` and `@casoon/castwright-player` — the only
   exception to "root has no functional code" — solely so `pnpm exec castwright ...`
   and `castwright dev` work from the repo root; this is what the plan's own acceptance
