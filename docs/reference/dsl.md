@@ -59,6 +59,7 @@ Exactly one primary key per step.
 | `type` | string | Type text at the cursor. No prompt, no Enter. |
 | `key` | see below | Send a single key. |
 | `output` | string or `{ raw }` | Emit program output. Not typed. |
+| `show` | path | Emit a file's contents, syntax-highlighted. See [below](#show). |
 | `wait` | ms | Pause. |
 | `clear` | `true` | Clear the screen. |
 | `prompt` | string | Change the prompt from here on. |
@@ -73,7 +74,7 @@ Exactly one primary key per step.
 | --- | --- | --- |
 | `speed` | `run`, `type` | Milliseconds per character. `0` is instant. |
 | `jitter` | `run`, `type` | 0–1, varies the per-character delay. Requires a top-level `seed`. |
-| `delay` | `output` | Milliseconds between output *lines*. Default 0 — the whole block at once. |
+| `delay` | `output`, `show` | Milliseconds between output *lines*. Default 0 — the whole block at once. |
 | `pause` | any | Milliseconds after this step. |
 | `prompt` | `run`, `type` | `false` suppresses the prompt for that step. |
 
@@ -96,6 +97,42 @@ offending value.
 boolean modifier above. Alone, it is the primary step that changes the prompt from there
 on. The presence of `run`/`type` is what decides.
 </Callout>
+
+### show
+
+`show` puts a file on screen with syntax highlighting — the output of a `cat`, without
+writing it out by hand in `output:`.
+
+```yaml
+steps:
+  - run: cat astro.config.ts
+  - show: snippets/astro.config.ts   # relative to this .terminal.yaml
+    lines: 1-7                       # optional: a line or a range, 1-based
+    lang: ts                         # optional: default is the file extension
+    theme: github-dark               # optional: any Shiki theme
+```
+
+Highlighting happens at build time with [Shiki](https://shiki.style/) and is written into
+the cast as 24-bit colour, so nothing extra reaches the browser. The default theme is the
+Shiki theme matching `terminal.theme` (`default` uses `dark-plus`, `default-light`
+uses `light-plus`).
+
+Shiki is an optional peer dependency: projects that never use `show` do not install it,
+and one that does gets a positioned error naming the fix.
+
+```bash
+pnpm add -D shiki
+```
+
+A missing file, a range past its end or an unknown language is reported with the file,
+line and column of the step. The Vite plugin registers the shown file as a dependency of
+the demo, so editing it recompiles the demo in dev.
+
+A compiled cast depends on the Shiki version as well as the file: the project's lockfile
+is what keeps it byte-identical from one build to the next.
+
+For code outside a terminal, use your site's ordinary code blocks — `show` is for a file
+that appears as part of a terminal session.
 
 ## Colour and style
 

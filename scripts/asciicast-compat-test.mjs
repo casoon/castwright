@@ -60,7 +60,7 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-const { compile, parse, serializeCast } = await import(
+const { compile, parse, resolveShowSteps, serializeCast } = await import(
   pathToFileURL(join(repo, 'packages/core/dist/index.js')).href
 );
 
@@ -75,7 +75,8 @@ try {
   let themed;
   for (const name of examples) {
     const file = join(repo, 'examples', name);
-    const cast = compile(parse(readFileSync(file, 'utf8'), file));
+    const { script } = await resolveShowSteps(parse(readFileSync(file, 'utf8'), file), file);
+    const cast = compile(script);
     const castPath = join(workdir, `${basename(name, '.terminal.yaml')}.cast`);
     writeFileSync(castPath, serializeCast(cast));
 

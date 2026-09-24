@@ -15,7 +15,7 @@ import type {
   Styled,
   TerminalConfig,
 } from '../types.js';
-import { errorAtOffset } from './errors.js';
+import { errorAtOffset, lineAt, positionAt } from './errors.js';
 import { parseMarkup } from './markup.js';
 import { unescapeRaw } from './unescape.js';
 
@@ -43,7 +43,16 @@ const CURSOR_STYLES: readonly CursorStyle[] = ['block', 'bar', 'underline'];
 
 // Step primary keys other than `prompt`, which is ambiguous with the `prompt`
 // modifier on `run`/`type` — see the disambiguation note in parseStep().
-const PRIMARY_STEP_KEYS = ['run', 'type', 'key', 'output', 'wait', 'clear', 'marker'] as const;
+const PRIMARY_STEP_KEYS = [
+  'run',
+  'type',
+  'key',
+  'output',
+  'show',
+  'wait',
+  'clear',
+  'marker',
+] as const;
 type PrimaryStepKey = (typeof PRIMARY_STEP_KEYS)[number];
 
 export interface ParseOptions {
@@ -448,6 +457,8 @@ function parseStep(node: Node, ctx: Ctx, defaults: StepDefaults, cols: number): 
       return [parseKeyStep(pair, map, ctx, defaults)];
     case 'output':
       return [parseOutputStep(pair, map, ctx, defaults, cols)];
+    case 'show':
+      return [parseShowStep(pair, map, ctx, defaults)];
     case 'wait':
       return [parseWaitStep(pair, map, ctx)];
     case 'clear':
@@ -548,6 +559,58 @@ function parseOutputStep(
   const pause = stepPause(map, ctx, defaults);
 
   return { kind: 'output', text, lineDelay, pause };
+}
+
+function parseShowStep(pair: Pair, map: YAMLMap, ctx: Ctx, defaults: StepDefaults): Step {
+  rejectUnknownKeys(map, ['show', 'lang', 'lines', 'theme', 'delay', 'pause'], ctx, "step 'show'");
+  const file = expectString(pair.value as Node, ctx, "step 'show'", pair);
+  if (file.trim() === '') ctx.errAtNode(pair, "step 'show' needs a file path");
+
+  const langPair = findPair(map, 'lang', ctx);
+  const lang = langPair?.value
+    ? expectString(langPair.value as Node, ctx, "step 'lang'", langPair)
+    : undefined;
+  const themePair = findPair(map, 'theme', ctx);
+  const theme = themePair?.value
+    ? expectString(themePair.value as Node, ctx, "step 'theme'", themePair)
+    : undefined;
+
+  const linesPair = findPair(map, 'lines', ctx);
+  let lines: { from: number; to: number } | undefined;
+  if (linesPair?.value) {
+    const raw = String(expectScalar(linesPair.value as Node, ctx, "step 'lines'", linesPair).value);
+    const match = /^\s*(\d+)\s*(?:-\s*(\d+)\s*)?$/.exec(raw);
+    const from = Number(match?.[1]);
+    const to = Number(match?.[2] ?? match?.[1]);
+    if (!match || from < 1 || to < from) {
+      ctx.errAtNode(
+        linesPair.value as Node,
+        `step 'lines' must be a line number or a range like 10-30, got '${raw}'`,
+      );
+    }
+    lines = { from, to };
+  }
+
+  const delayPair = findPair(map, 'delay', ctx);
+  const lineDelay = delayPair?.value
+    ? expectNumber(delayPair.value as Node, ctx, "step 'delay'", delayPair, DURATION)
+    : 0;
+  const pause = stepPause(map, ctx, defaults);
+
+  const offset = nodeOffset(pair.value as Node);
+  const position = positionAt(ctx.source, offset);
+  const source = { ...position, text: lineAt(ctx.source, position.line) };
+
+  return {
+    kind: 'show',
+    file,
+    ...(lang === undefined ? {} : { lang }),
+    ...(lines === undefined ? {} : { lines }),
+    ...(theme === undefined ? {} : { theme }),
+    lineDelay,
+    pause,
+    source,
+  };
 }
 
 function parseWaitStep(pair: Pair, map: YAMLMap, ctx: Ctx): Step {

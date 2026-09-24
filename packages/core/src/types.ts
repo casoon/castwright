@@ -79,7 +79,29 @@ export type Step =
   | { kind: 'wait'; ms: number }
   | { kind: 'clear'; pause: number }
   | { kind: 'prompt'; prompt: Styled; pause: number }
-  | { kind: 'marker'; label: string; pause: number };
+  | { kind: 'marker'; label: string; pause: number }
+  | ShowStep;
+
+/**
+ * `show:` — a file's contents, syntax-highlighted. It cannot be compiled as
+ * is: `resolveShowSteps()` reads the file and turns the step into an
+ * `output` step before `compile()` runs, which keeps the compiler free of I/O.
+ * `source` is where the step was written, so an error found only then (a
+ * missing file, an unknown language) still points at the YAML.
+ */
+export interface ShowStep {
+  kind: 'show';
+  /** As written — relative to the `.terminal.yaml` it appears in. */
+  file: string;
+  lang?: string;
+  /** 1-based, inclusive. */
+  lines?: { from: number; to: number };
+  /** A Shiki theme name; default: the one matching the terminal theme. */
+  theme?: string;
+  lineDelay: number;
+  pause: number;
+  source: { line: number; column: number; text: string };
+}
 
 // ---------------------------------------------------------------------------
 // Script — the parser's output

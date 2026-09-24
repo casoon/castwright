@@ -1,0 +1,12 @@
+version: 1
+
+terminal:
+  title: show
+  cols: 64
+  rows: 12
+  theme: catppuccin-mocha
+
+steps:
+  - run: cat astro.config.ts
+  - show: snippets/astro.config.ts
+  - wait: 1500

@@ -15,6 +15,8 @@ export type { SourcePosition } from './parser/errors.js';
 export { CastwrightParseError } from './parser/errors.js';
 export type { ParseOptions } from './parser/parse.js';
 export { parse } from './parser/parse.js';
+export type { ResolvedScript } from './show/resolve.js';
+export { resolveShowSteps } from './show/resolve.js';
 export type { ThemeName } from './themes/index.js';
 export { isThemeName, resolveTheme, THEME_NAMES } from './themes/index.js';
 export type {
@@ -27,6 +29,7 @@ export type {
   CursorStyle,
   KeyName,
   Script,
+  ShowStep,
   Span,
   Step,
   StepDefaults,
