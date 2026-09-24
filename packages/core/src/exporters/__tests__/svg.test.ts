@@ -33,9 +33,15 @@ describe('renderSvg', () => {
     expect(svg).toContain('<text x="16.8" y="13.5" textLength="42">hello</text>');
   });
 
-  it('measures wide glyphs in cells, not string length', async () => {
-    const svg = await renderSvg({ header: header(), events: [[0, 'o', '日本']] });
-    expect(svg).toContain('textLength="33.6">日本</text>');
+  it('places each non-ASCII glyph at its own column, unpinned', async () => {
+    // textLength spreads a width difference over every character of a run, so
+    // a glyph the font draws wider or narrower than a cell would shift its
+    // neighbours. Wide glyphs count two cells, from the terminal buffer.
+    const svg = await renderSvg({ header: header(), events: [[0, 'o', '日本 ok ✓ go']] });
+    expect(svg).toContain('<text x="0" y="13.5">日</text><text x="16.8" y="13.5">本</text>');
+    expect(svg).toContain('<text x="42" y="13.5" textLength="16.8">ok</text>');
+    expect(svg).toContain('<text x="67.2" y="13.5">✓</text>');
+    expect(svg).toContain('<text x="84" y="13.5" textLength="16.8">go</text>');
   });
 
   it('defines a repeated row once', async () => {
@@ -49,7 +55,7 @@ describe('renderSvg', () => {
     expect(svg.match(/>same</g)).toHaveLength(1);
   });
 
-  it('animates one keyframe per frame and honours reduced motion', async () => {
+  it('gives a changing line its own timeline and honours reduced motion', async () => {
     const svg = await renderSvg(
       {
         header: header(),
@@ -60,10 +66,55 @@ describe('renderSvg', () => {
       },
       { loopDelay: 1000 },
     );
-    expect(svg).toContain('animation:play 2s steps(1,end) infinite');
-    expect(svg).toContain('25%{transform:translateX(-168px)}');
-    expect(svg).toContain('50%{transform:translateX(-336px)}');
-    expect(svg).toContain('prefers-reduced-motion:reduce');
+    expect(svg).toContain('.a{animation-duration:2s;animation-timing-function:steps(1,end)');
+    // The line's states: blank, 'a', 'ab' — at 0 %, 25 % and 50 % of 2 s.
+    expect(svg).toContain(
+      '@keyframes k0{0%{translate:0px}25%{translate:-168px}50%{translate:-336px}',
+    );
+    // The cursor moves one cell per keystroke.
+    expect(svg).toContain('25%{translate:8.4px 0px}50%{translate:16.8px 0px}');
+    // Reduced motion: every timeline paused inside the final hold.
+    expect(svg).toContain(
+      '@media (prefers-reduced-motion:reduce){.a{animation-play-state:paused;animation-delay:-1.5s}}',
+    );
+  });
+
+  it('does not repeat unchanged lines while typing', async () => {
+    const svg = await renderSvg({
+      header: header(20, 3),
+      events: [
+        [0, 'o', 'static line\r\n'],
+        [1, 'o', 'x'],
+        [2, 'o', 'y'],
+        [3, 'o', 'z'],
+      ],
+    });
+    // The first line never changes: one plain reference, no timeline.
+    expect(svg.match(/href="#r0"/g)).toHaveLength(1);
+    expect(svg).toContain('<use href="#r0" y="0"/>');
+  });
+
+  it('scrolls by moving one strip of lines, not by changing every row', async () => {
+    const lines = Array.from({ length: 6 }, (_, i) => [i + 1, 'o', `line ${i}\r\n`] as const);
+    const svg = await renderSvg({ header: header(20, 3), events: lines.map((e) => [...e]) });
+    // One scroll timeline for the strip…
+    expect(svg).toMatch(/translate:0 -18px\}.*translate:0 -36px\}.*translate:0 -54px\}/);
+    // …and each printed line defined and referenced once, at its buffer index.
+    for (let i = 0; i < 6; i++) expect(svg.match(new RegExp(`>line ${i}<`, 'g'))).toHaveLength(1);
+  });
+
+  it('switches to and from the alternate screen', async () => {
+    const svg = await renderSvg({
+      header: header(20, 3),
+      events: [
+        [0, 'o', 'shell\r\n'],
+        [1, 'o', '\x1b[?1049h\x1b[Hfull screen'],
+        [2, 'o', '\x1b[?1049l'],
+      ],
+    });
+    expect(svg).toContain('>full screen<');
+    expect(svg).toContain('visibility:hidden');
+    expect(svg).toContain('visibility:visible');
   });
 
   it('merges changes closer than minFrameInterval', async () => {

@@ -144,9 +144,14 @@ test.describe('under a strict style-src', () => {
     const demo = page.locator('#demo-colours');
     await demo.scrollIntoViewIfNeeded();
     await demo.locator('.xterm-rows').waitFor();
-    await demo.evaluate((el: HTMLElement & { player?: { seek(s: number): void } }) => {
-      el.player?.seek(9999);
-    });
+    // Paused first: the demo loops, and a replay starting mid-assertion would
+    // put a second, partial copy of the text on screen.
+    await demo.evaluate(
+      (el: HTMLElement & { player?: { pause(): void; seek(s: number): void } }) => {
+        el.player?.pause();
+        el.player?.seek(9999);
+      },
+    );
     const rows = demo.locator('.xterm-rows');
     await expect(rows).toContainText('#f38ba8');
 

@@ -9,7 +9,7 @@ Errors go to stderr, results to stdout, so the commands compose.
 ## build
 
 ```
-castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4]
+castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>]
 ```
 
 Compiles a `*.terminal.yaml` to `<dir>/<name>.<format>` and prints the path. `-o` defaults
@@ -42,6 +42,19 @@ but never alignment. `prefers-reduced-motion` shows the finished screen.
 ```markdown
 ![castwright demo](docs/demo.svg)
 ```
+
+Two options apply to `svg` only:
+
+| Option | Effect |
+|---|---|
+| `--no-chrome` | Drops the window title bar with the traffic lights. |
+| `--loop-delay <ms>` | How long the finished screen holds before the loop restarts. Default 2000. |
+
+Size grows with the length of the demo, at roughly 2 KB per second of typing and output
+before compression — about 50 KB for 20 seconds, 120 KB for a minute. Each line of the
+terminal is animated on its own, so a keystroke or a scroll adds a few bytes rather than
+a copy of the screen. For a README, keep demos short; the GIF of the same demo is usually
+larger.
 
 `gif` and `mp4` are for places that take nothing else — social posts, slides. castwright
 does not rasterise anything itself; agg does, using the theme in the cast header, and a
