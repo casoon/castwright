@@ -24,7 +24,7 @@ export interface FinalFrameOptions {
 }
 
 /** `"120x40"` → `{ cols: 120, rows: 40 }`; undefined for anything else. */
-function parseResize(data: string): { cols: number; rows: number } | undefined {
+export function parseResize(data: string): { cols: number; rows: number } | undefined {
   const match = /^(\d+)x(\d+)$/.exec(data.trim());
   if (!match) return undefined;
   const cols = Number(match[1]);

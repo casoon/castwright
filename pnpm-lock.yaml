@@ -32,12 +32,12 @@ importers:
 
   examples/astro:
     dependencies:
+      '@casoon/astro-castwright':
+        specifier: workspace:*
+        version: link:../../packages/astro
       '@casoon/castwright':
         specifier: workspace:*
         version: link:../../packages/core
-      '@casoon/castwright-astro':
-        specifier: workspace:*
-        version: link:../../packages/astro
       '@casoon/castwright-player':
         specifier: workspace:*
         version: link:../../packages/player

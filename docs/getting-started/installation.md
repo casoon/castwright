@@ -15,17 +15,17 @@ yet, so the commands below will not resolve until the first release.
 | --- | --- | --- |
 | `@casoon/castwright` | Parser, compiler, the `castwright` CLI, and the Vite plugin | Always |
 | `@casoon/castwright-player` | `<castwright-demo>`, the web component | Whenever a demo appears in a browser |
-| `@casoon/castwright-astro` | Astro integration and `<TerminalDemo />` | Astro projects only |
+| `@casoon/astro-castwright` | Astro integration and `<TerminalDemo />` | Astro projects only |
 
 ## Astro
 
 ```bash
-pnpm add -D @casoon/castwright @casoon/castwright-astro @casoon/castwright-player
+pnpm add -D @casoon/castwright @casoon/astro-castwright @casoon/castwright-player
 ```
 
 ```js
 // astro.config.mjs
-import castwright from '@casoon/castwright-astro';
+import castwright from '@casoon/astro-castwright';
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({

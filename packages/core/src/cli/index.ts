@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // castwright CLI — see docs/reference/cli.md.
 
+import { ExternalToolError } from '../exporters/raster.js';
 import { CastwrightParseError } from '../parser/errors.js';
 import { parseBuildArgs, runBuild } from './build.js';
 import { parseDevArgs } from './dev-args.js';
@@ -10,7 +11,7 @@ import { parseValidateArgs, runValidate } from './validate.js';
 const USAGE = `castwright — declarative terminal demos for the web
 
 Usage:
-  castwright build <file> [-o <dir>] [--format <name>]
+  castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4]
   castwright validate <file>...
   castwright dev <file> [--port <n>]
 
@@ -35,8 +36,9 @@ function main(argv: string[]): void {
     switch (command) {
       case 'build': {
         const options = parseBuildArgs(rest);
-        const outPath = runBuild(options);
-        process.stdout.write(`${outPath}\n`);
+        void runBuild(options)
+          .then((outPath) => process.stdout.write(`${outPath}\n`))
+          .catch(handleError);
         return;
       }
       case 'validate': {
@@ -61,11 +63,19 @@ function main(argv: string[]): void {
         fail(`unknown command '${command}'\n\n${USAGE}`);
     }
   } catch (error) {
-    if (error instanceof CliUsageError || error instanceof CastwrightParseError) {
-      fail(error.message);
-    }
-    throw error; // an unexpected/internal error — let it surface with a stack trace
+    handleError(error);
   }
+}
+
+function handleError(error: unknown): never {
+  if (
+    error instanceof CliUsageError ||
+    error instanceof CastwrightParseError ||
+    error instanceof ExternalToolError
+  ) {
+    fail(error.message);
+  }
+  throw error; // an unexpected/internal error — let it surface with a stack trace
 }
 
 main(process.argv.slice(2));

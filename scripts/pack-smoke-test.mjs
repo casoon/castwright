@@ -22,7 +22,7 @@ const PACKAGES = ['core', 'player', 'astro'];
 const NAMES = {
   core: '@casoon/castwright',
   player: '@casoon/castwright-player',
-  astro: '@casoon/castwright-astro',
+  astro: '@casoon/astro-castwright',
 };
 
 let failures = 0;
@@ -145,12 +145,12 @@ try {
   check(typeof vite.castwright === 'function', '@casoon/castwright/vite exports the plugin');
 
   const astro = await import(
-    pathToFileURL(join(modules, '@casoon/castwright-astro/dist/index.js')).href
+    pathToFileURL(join(modules, '@casoon/astro-castwright/dist/index.js')).href
   );
-  check(typeof astro.default === 'function', '@casoon/castwright-astro exports the integration');
+  check(typeof astro.default === 'function', '@casoon/astro-castwright exports the integration');
   check(
-    existsSync(join(modules, '@casoon/castwright-astro/src/TerminalDemo.astro')),
-    '@casoon/castwright-astro ships TerminalDemo.astro',
+    existsSync(join(modules, '@casoon/astro-castwright/src/TerminalDemo.astro')),
+    '@casoon/astro-castwright ships TerminalDemo.astro',
   );
 
   // Server-side rendering, which is what this process is: bare Node, no DOM, no

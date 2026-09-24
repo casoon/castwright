@@ -101,10 +101,15 @@ flowchart LR
 ```
 
 - `cli/formats.ts` is a registry (`Record<string, OutputFormat>`), not an `if` chain —
-  the SVG (item 08) and GIF/MP4 (item 11) exporters add entries here rather than
-  branches in `build.ts`. Only `cast` is registered today.
-- `cli/errors.ts`'s `CliUsageError` (a bad flag) and `parser/errors.ts`'s
-  `CastwrightParseError` (a mistake in the DSL file) are the two error types
+  exporters are entries here (`cast`, `svg`, `gif`, `mp4`), not branches in `build.ts`.
+  A renderer may be async and may return bytes; `runBuild` awaits it.
+- `exporters/svg.ts` replays the cast into `@xterm/headless`, snapshots the screen per
+  frame (changes under 30 ms merged), defines each distinct row once and animates a strip
+  of frames with one CSS keyframe rule. `exporters/raster.ts` shells out to `agg` (GIF)
+  and `ffmpeg` (GIF → MP4); a missing tool throws `ExternalToolError`.
+- `cli/errors.ts`'s `CliUsageError` (a bad flag), `parser/errors.ts`'s
+  `CastwrightParseError` (a mistake in the DSL file) and `exporters/raster.ts`'s
+  `ExternalToolError` (agg/ffmpeg missing or failing) are the error types
   `index.ts` catches and prints as a single clean message with no stack trace;
   anything else is treated as an internal bug and left to crash with one.
 - `validate` checks every given file, not just the first failure, and exits non-zero
@@ -156,7 +161,7 @@ flowchart TB
   installed package by `scripts/generate-xterm-css.mjs`, so a plain HTML page needs one
   script tag and no second file.
 
-## `@casoon/castwright-astro` — Astro ergonomics
+## `@casoon/astro-castwright` — Astro ergonomics
 
 Registers the Vite plugin and adds `TerminalDemo.astro`, which inlines the compiled cast
 as JSON, emits `finalFrame` as the element's light-DOM accessibility fallback, and
@@ -176,5 +181,4 @@ terminal logic; both halves work in Astro without it.
 
 ## Not yet part of this architecture
 
-SVG and GIF export. `svg-term-cli` and `agg` already consume asciicast, so those items
-start by evaluating delegation rather than building a renderer.
+`exec:` mode and VHS `.tape` input.

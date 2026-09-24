@@ -1,4 +1,4 @@
-# @casoon/castwright-astro
+# @casoon/astro-castwright
 
 ## 0.1.0
 

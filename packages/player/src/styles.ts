@@ -27,7 +27,11 @@ castwright-demo {
      container out of the page. Shrinking is always allowed; the terminal inside
      scales to fit instead (see fit.ts). */
   min-width: 0;
-  max-width: 100%;
+  /* --castwright-natural-width is the terminal's unscaled width, set by the
+     player (fit.ts): the frame hugs the terminal on a wide page and shrinks
+     with a narrow one. Pages align the element themselves, e.g. with
+     margin-inline: auto. */
+  max-width: min(100%, var(--castwright-natural-width, 100%));
   /* Set by the Astro component from the cast's row count, so the page reserves
      the terminal's space before hydration and does not shift when the real one
      appears. Cleared by the player once it has measured for real. */

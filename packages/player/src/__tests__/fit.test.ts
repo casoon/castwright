@@ -24,15 +24,18 @@ describe('computeScale', () => {
 
 describe('fitToWidth', () => {
   it('does nothing when the element has no layout yet', () => {
+    const host = document.createElement('div');
     const screen = document.createElement('div');
     const scaler = document.createElement('div');
     screen.appendChild(scaler);
-    document.body.appendChild(screen);
+    host.appendChild(screen);
+    document.body.appendChild(host);
 
     // happy-dom reports 0 for offsetWidth — the same situation as display:none
     // or a measurement before first paint.
-    expect(() => fitToWidth(screen, scaler)).not.toThrow();
+    expect(() => fitToWidth(host, screen, scaler)).not.toThrow();
     expect(scaler.style.transform).toBe('');
     expect(screen.style.height).toBe('');
+    expect(host.style.getPropertyValue('--castwright-natural-width')).toBe('');
   });
 });

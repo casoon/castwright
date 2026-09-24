@@ -1,5 +1,5 @@
 {
-  "name": "@casoon/castwright-astro",
+  "name": "@casoon/astro-castwright",
   "version": "0.1.0",
   "description": "Astro integration for castwright \u2014 <TerminalDemo /> and automatic Vite plugin registration.",
   "license": "MIT",
@@ -16,6 +16,10 @@
     "asciicast",
     "astro",
     "astro-component",
+    "astro-integration",
+    "withastro",
+    "ui",
+    "media",
     "demo"
   ],
   "engines": {
