@@ -50,8 +50,17 @@ interface Frame {
   time: number;
   /** Row definition id per screen row; undefined for an empty row. */
   rows: (number | undefined)[];
+  /** The buffer line at the top of the screen — how far the normal buffer has scrolled. */
+  baseY: number;
+  /** Full-screen programs switch to the alternate buffer, which never scrolls. */
+  alternate: boolean;
   cursor?: { x: number; y: number };
 }
+
+// Enough scrollback that a buffer line keeps its index for the whole demo: the
+// renderer follows each line by that index, so a scroll moves one strip of
+// lines instead of changing every row on screen.
+const SCROLLBACK = 50_000;
 
 /** Everything a frame snapshot needs to turn buffer cells into markup. */
 class RowRenderer {
@@ -73,13 +82,21 @@ class RowRenderer {
       run = undefined;
     };
 
+    // Only printable ASCII is grouped into runs. A run's `textLength` fixes its
+    // total width but spreads any difference evenly over its characters, which
+    // is exact for a monospace font's ASCII and wrong for anything the font
+    // draws wider or narrower than a cell — an emoji, a CJK glyph, a symbol
+    // from a fallback font. Those get a <text> of their own at their column,
+    // and overhang it as they would in xterm.
+    const isAscii = (text: string): boolean => /^[\x20-\x7e]$/.test(text);
+
     for (let x = 0; x < cols; x++) {
       line.getCell(x, cell);
       const width = cell.getWidth();
       if (width === 0) continue; // second half of a wide glyph
       const style = this.#style(cell);
       const text = cell.getChars() || ' ';
-      if (run && run.style.key === style.key) {
+      if (run && run.style.key === style.key && isAscii(text) && isAscii(run.text.slice(-1))) {
         run.width += width;
         run.text += text;
       } else {
@@ -117,15 +134,22 @@ class RowRenderer {
     }
     if (style.invisible) return out;
 
+    const className = this.#className(style);
+    const cls = className ? ` class="${className}"` : '';
+
+    // A single non-ASCII cell: placed at its column, drawn at its own width.
+    if (!/^[\x20-\x7e]+$/.test(text)) {
+      out += `<text x="${num(col * CELL_W)}" y="${BASELINE}"${cls}>${escapeXml(text)}</text>`;
+      return out;
+    }
+
     // Trim spaces at both ends so blank stretches cost nothing; the leading
-    // ones move the start column instead. Wide glyphs are never spaces, so
-    // one character is one column here.
+    // ones move the start column instead. ASCII only, so one character is one
+    // column here.
     const trimmedStart = text.length - text.trimStart().length;
     const body = text.trim();
     if (body === '') return out;
     const bodyWidth = width - trimmedStart - (text.length - text.trimEnd().length);
-    const className = this.#className(style);
-    const cls = className ? ` class="${className}"` : '';
     out += `<text x="${num((col + trimmedStart) * CELL_W)}" y="${BASELINE}" textLength="${num(bodyWidth * CELL_W)}"${cls}>${escapeXml(body)}</text>`;
     return out;
   }
@@ -240,7 +264,7 @@ async function collectFrames(
   let rows = cast.header.height;
   let maxCols = cols;
   let maxRows = rows;
-  const terminal = new Terminal({ cols, rows, allowProposedApi: true, scrollback: 0 });
+  const terminal = new Terminal({ cols, rows, allowProposedApi: true, scrollback: SCROLLBACK });
   const cell = terminal.buffer.active.getNullCell();
   const write = (data: string): Promise<void> =>
     new Promise<void>((resolve) => terminal.write(data, resolve));
@@ -250,7 +274,12 @@ async function collectFrames(
 
   const snapshot = (time: number): void => {
     const buffer = terminal.buffer.active;
-    const frame: Frame = { time, rows: [] };
+    const frame: Frame = {
+      time,
+      rows: [],
+      baseY: buffer.baseY,
+      alternate: buffer.type === 'alternate',
+    };
     for (let y = 0; y < rows; y++) {
       const line = buffer.getLine(buffer.baseY + y);
       frame.rows.push(line ? renderer.row(line, cols, cell) : undefined);
@@ -332,32 +361,139 @@ export async function renderSvg(cast: Cast, options: SvgOptions = {}): Promise<s
   const total = (last?.time ?? 0) + loopDelay / 1000;
   const animated = frames.length > 1 && total > 0;
 
-  let strip = '';
-  frames.forEach((frame, i) => {
-    let body = '';
-    frame.rows.forEach((id, y) => {
-      if (id !== undefined) body += `<use href="#r${id}" y="${y * LINE_H}"/>`;
-    });
-    if (frame.cursor) {
-      body += `<rect class="cur" x="${num(frame.cursor.x * CELL_W)}" y="${frame.cursor.y * LINE_H}" width="${CELL_W}" height="${LINE_H}"/>`;
-    }
-    strip += i === 0 ? `<g>${body}</g>` : `<g transform="translate(${num(i * termW)})">${body}</g>`;
-  });
-
+  // Timelines follow buffer lines, not screen rows, the way a terminal does:
+  // each line of the normal buffer sits at a fixed place on one tall strip,
+  // gets a timeline only if its content changes, and scrolling is a single
+  // timeline that moves the whole strip. Typing a command changes one line;
+  // printing one scrolls the strip once. A frame-by-frame encoding would
+  // repeat every row on screen for each of those. The alternate buffer
+  // (full-screen programs) never scrolls, so its rows are fixed to the screen.
+  // All timelines share one duration, so they stay on the same clock.
+  const pct = (time: number): string => String(Math.round((time / total) * 100_000) / 1000);
   let animation = '';
+  let timelines = 0;
+
+  type State<T> = { time: number; value: T };
+  /** Appends a state unless it repeats the previous one; timelines start at 0. */
+  const push = <T>(states: State<T>[], time: number, value: T, initial: T): void => {
+    if (states.length === 0) {
+      // A value already there at 0 is the starting state, not a change from `initial`.
+      states.push({ time: 0, value: time === 0 ? value : initial });
+      if (time === 0) return;
+    }
+    if (states[states.length - 1]?.value !== value) states.push({ time, value });
+  };
+  /** Keyframes for `states`; returns the class that runs them. */
+  const timeline = <T>(states: State<T>[], declare: (value: T, i: number) => string): string => {
+    const name = `k${timelines++}`;
+    const steps = states.map((state, i) => `${pct(state.time)}%{${declare(state.value, i)}}`);
+    const final = states.length - 1;
+    animation += `.${name}{animation-name:${name}}@keyframes ${name}{${steps.join('')}100%{${declare(states[final]?.value as T, final)}}}`;
+    return `a ${name}`;
+  };
+  /** One line at `y`: a plain <use> if it never changes, otherwise a strip of its states. */
+  const lineAt = (y: number, states: State<number | undefined>[]): string => {
+    if (states.length === 1) {
+      const id = states[0]?.value;
+      return id === undefined ? '' : `<use href="#r${id}" y="${y}"/>`;
+    }
+    let strip = '';
+    states.forEach((state, i) => {
+      if (state.value !== undefined)
+        strip += `<use href="#r${state.value}" x="${num(i * termW)}"/>`;
+    });
+    const cls = timeline(states, (_, i) => `translate:${num(-i * termW)}px`);
+    return `<svg y="${y}" width="${num(termW)}" height="${LINE_H}"><g class="${cls}">${strip}</g></svg>`;
+  };
+
+  let screen = '';
+  if (!animated) {
+    last?.rows.forEach((id, y) => {
+      if (id !== undefined) screen += `<use href="#r${id}" y="${y * LINE_H}"/>`;
+    });
+  } else {
+    const normalLines = new Map<number, State<number | undefined>[]>();
+    const altRows = new Map<number, State<number | undefined>[]>();
+    const scroll: State<number>[] = [];
+    const mode: State<boolean>[] = [];
+    for (const frame of frames) {
+      push(mode, frame.time, frame.alternate, false);
+      if (frame.alternate) {
+        frame.rows.forEach((id, y) => {
+          const states = altRows.get(y) ?? [];
+          altRows.set(y, states);
+          push(states, frame.time, id, undefined);
+        });
+        continue;
+      }
+      push(scroll, frame.time, frame.baseY, frames[0]?.baseY ?? 0);
+      frame.rows.forEach((id, y) => {
+        const index = frame.baseY + y;
+        const states = normalLines.get(index) ?? [];
+        normalLines.set(index, states);
+        push(states, frame.time, id, undefined);
+      });
+    }
+
+    let normal = '';
+    for (const [index, states] of [...normalLines].sort((a, b) => a[0] - b[0])) {
+      normal += lineAt(index * LINE_H, states);
+    }
+    normal =
+      scroll.length === 1
+        ? (scroll[0]?.value ?? 0) === 0
+          ? normal
+          : `<g transform="translate(0 ${-(scroll[0]?.value ?? 0) * LINE_H})">${normal}</g>`
+        : `<g class="${timeline(scroll, (baseY) => `translate:0 ${-baseY * LINE_H}px`)}">${normal}</g>`;
+
+    if (mode.length === 1) {
+      screen = normal;
+    } else {
+      let alt = '';
+      for (const [y, states] of altRows) alt += lineAt(y * LINE_H, states);
+      const visible = (show: boolean) => (show ? 'visibility:visible' : 'visibility:hidden');
+      screen =
+        `<g class="${timeline(mode, (isAlt) => visible(!isAlt))}">${normal}</g>` +
+        `<g class="${timeline(mode, (isAlt) => visible(isAlt))}">${alt}</g>`;
+    }
+  }
+
+  // The cursor is one element that moves, with a timeline of its own.
+  const cursorAt = (frame: Frame | undefined): string =>
+    frame?.cursor ? `${num(frame.cursor.x * CELL_W)},${frame.cursor.y * LINE_H}` : 'hidden';
+  const cursor: State<string>[] = [];
   if (animated) {
-    const keyframes = frames
-      .map(
-        (frame, i) =>
-          `${num((frame.time / total) * 100)}%{transform:translateX(${num(-i * termW)}px)}`,
-      )
-      .join('');
-    const lastX = num(-(frames.length - 1) * termW);
+    for (const frame of frames) push(cursor, frame.time, cursorAt(frame), cursorAt(frames[0]));
+  } else {
+    cursor.push({ time: 0, value: cursorAt(last) });
+  }
+  const cursorRect = `width="${CELL_W}" height="${LINE_H}"`;
+  if (cursor.length === 1) {
+    const at = cursor[0]?.value ?? 'hidden';
+    if (at !== 'hidden') {
+      const [x, y] = at.split(',');
+      screen += `<rect class="cur" x="${x}" y="${y}" ${cursorRect}/>`;
+    }
+  } else {
+    // `translate` rather than `transform: translate()`: this timeline has a
+    // step per keystroke, and it is the largest part of a long demo.
+    const hides = cursor.some((state) => state.value === 'hidden');
+    const cls = timeline(cursor, (at) => {
+      if (at === 'hidden') return 'visibility:hidden';
+      const move = `translate:${at.replace(',', 'px ')}px`;
+      return hides ? `visibility:visible;${move}` : move;
+    });
+    screen += `<rect class="cur ${cls}" ${cursorRect}/>`;
+  }
+
+  if (animation !== '') {
+    // Reduced motion shows the finished screen: every timeline paused at the
+    // same instant inside the final hold.
+    const hold = (last?.time ?? 0) + (total - (last?.time ?? 0)) / 2;
     animation =
-      `.strip{animation:play ${num(total)}s steps(1,end) infinite}` +
-      `@keyframes play{${keyframes}100%{transform:translateX(${lastX}px)}}` +
-      // Reduced motion shows the finished screen instead of the animation.
-      `@media (prefers-reduced-motion:reduce){.strip{animation:none;transform:translateX(${lastX}px)}}`;
+      `.a{animation-duration:${num(total)}s;animation-timing-function:steps(1,end);animation-iteration-count:infinite}` +
+      animation +
+      `@media (prefers-reduced-motion:reduce){.a{animation-play-state:paused;animation-delay:-${num(hold)}s}}`;
   }
 
   const css =
@@ -387,7 +523,7 @@ export async function renderSvg(cast: Cast, options: SvgOptions = {}): Promise<s
     `<style>${css}</style>` +
     `<defs>${renderer.defs()}</defs>` +
     frameMarkup +
-    `<svg x="${PAD}" y="${top}" width="${num(termW)}" height="${termH}"><g class="strip">${strip}</g></svg>` +
+    `<svg x="${PAD}" y="${top}" width="${num(termW)}" height="${termH}">${screen}</svg>` +
     '</svg>\n'
   );
 }

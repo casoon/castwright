@@ -104,8 +104,12 @@ flowchart LR
   exporters are entries here (`cast`, `svg`, `gif`, `mp4`), not branches in `build.ts`.
   A renderer may be async and may return bytes; `runBuild` awaits it.
 - `exporters/svg.ts` replays the cast into `@xterm/headless`, snapshots the screen per
-  frame (changes under 30 ms merged), defines each distinct row once and animates a strip
-  of frames with one CSS keyframe rule. `exporters/raster.ts` shells out to `agg` (GIF)
+  frame (changes under 30 ms merged) and defines each distinct row once. Timelines follow
+  buffer lines, not frames: each line of the normal buffer sits at its index on one tall
+  strip and animates only when its content changes, scrolling is one timeline moving the
+  strip, and the cursor has its own. The alternate buffer's rows are fixed to the screen.
+  Printable ASCII is grouped into runs pinned with `textLength`; any other glyph gets its
+  own `<text>` at its column, since `textLength` spreads a width difference across a run. `exporters/raster.ts` shells out to `agg` (GIF)
   and `ffmpeg` (GIF → MP4); a missing tool throws `ExternalToolError`.
 - `cli/errors.ts`'s `CliUsageError` (a bad flag), `parser/errors.ts`'s
   `CastwrightParseError` (a mistake in the DSL file) and `exporters/raster.ts`'s

@@ -13,14 +13,21 @@ export interface BuildOptions {
   file: string;
   outDir: string;
   format: string;
+  /** SVG only: drop the window title bar. */
+  noChrome?: boolean;
+  /** SVG only: ms the last frame holds before the loop restarts. */
+  loopDelay?: number;
 }
 
-const USAGE = 'usage: castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4]';
+const USAGE =
+  'usage: castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>]';
 
 export function parseBuildArgs(args: string[]): BuildOptions {
   let file: string | undefined;
   let outDir = 'dist';
   let format = 'cast';
+  let noChrome = false;
+  let loopDelay: number | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -32,6 +39,15 @@ export function parseBuildArgs(args: string[]): BuildOptions {
       const value = args[++i];
       if (value === undefined) throw new CliUsageError(`--format requires a value\n${USAGE}`);
       format = value;
+    } else if (arg === '--no-chrome') {
+      noChrome = true;
+    } else if (arg === '--loop-delay') {
+      const value = args[++i];
+      const ms = Number(value);
+      if (value === undefined || value.trim() === '' || !Number.isInteger(ms) || ms < 0) {
+        throw new CliUsageError(`--loop-delay requires a whole number of milliseconds\n${USAGE}`);
+      }
+      loopDelay = ms;
     } else if (arg?.startsWith('-')) {
       throw new CliUsageError(`unknown option '${arg}'\n${USAGE}`);
     } else if (file === undefined) {
@@ -45,7 +61,18 @@ export function parseBuildArgs(args: string[]): BuildOptions {
     throw new CliUsageError(`missing <file>\n${USAGE}`);
   }
 
-  return { file, outDir, format };
+  if ((noChrome || loopDelay !== undefined) && format !== 'svg') {
+    const flag = noChrome ? '--no-chrome' : '--loop-delay';
+    throw new CliUsageError(`${flag} only applies to --format svg\n${USAGE}`);
+  }
+
+  return {
+    file,
+    outDir,
+    format,
+    ...(noChrome ? { noChrome } : {}),
+    ...(loopDelay === undefined ? {} : { loopDelay }),
+  };
 }
 
 /** @returns the written file's path, for the caller to print to stdout. */
@@ -63,7 +90,10 @@ export async function runBuild(options: BuildOptions): Promise<string> {
   });
   const { script: resolved } = await resolveShowSteps(script, options.file);
   const cast = compile(resolved);
-  const content = await outputFormat.render(cast);
+  const content = await outputFormat.render(cast, {
+    chrome: !options.noChrome,
+    ...(options.loopDelay === undefined ? {} : { loopDelay: options.loopDelay }),
+  });
 
   mkdirSync(options.outDir, { recursive: true });
   const outPath = join(options.outDir, `${outputBaseName(options.file)}.${outputFormat.extension}`);

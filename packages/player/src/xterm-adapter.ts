@@ -59,7 +59,11 @@ export function createXtermTerminal(init: TerminalInit): TerminalAdapter {
       terminal.write(data);
     },
     reset() {
-      terminal.reset();
+      // In-band (RIS, ESC c) rather than terminal.reset(): xterm parses write()
+      // data asynchronously, and an immediate reset would let output still
+      // queued from before it land on the fresh screen — a seek or restart
+      // during playback then showed two runs' worth of output.
+      terminal.write('\x1bc');
     },
     resize(cols, rows) {
       terminal.resize(cols, rows);

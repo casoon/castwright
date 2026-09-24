@@ -27,6 +27,38 @@ describe('parseBuildArgs', () => {
     });
   });
 
+  it('accepts the SVG options with --format svg', () => {
+    expect(
+      parseBuildArgs(['d.terminal.yaml', '--format', 'svg', '--no-chrome', '--loop-delay', '500']),
+    ).toEqual({
+      file: 'd.terminal.yaml',
+      outDir: 'dist',
+      format: 'svg',
+      noChrome: true,
+      loopDelay: 500,
+    });
+  });
+
+  it('rejects the SVG options with any other format', () => {
+    expect(() => parseBuildArgs(['d.terminal.yaml', '--no-chrome'])).toThrow(
+      /--no-chrome only applies to --format svg/,
+    );
+    expect(() =>
+      parseBuildArgs(['d.terminal.yaml', '--format', 'gif', '--loop-delay', '1']),
+    ).toThrow(/--loop-delay only applies/);
+  });
+
+  it('rejects a --loop-delay that is not whole milliseconds', () => {
+    for (const bad of ['-1', '1.5', 'soon', '']) {
+      expect(() =>
+        parseBuildArgs(['d.terminal.yaml', '--format', 'svg', '--loop-delay', bad]),
+      ).toThrow(/whole number of milliseconds/);
+    }
+    expect(() => parseBuildArgs(['d.terminal.yaml', '--format', 'svg', '--loop-delay'])).toThrow(
+      /whole number/,
+    );
+  });
+
   it('rejects a missing file', () => {
     expect(() => parseBuildArgs([])).toThrow(CliUsageError);
   });
@@ -101,6 +133,10 @@ describe('runBuild', () => {
     const outPath = await runBuild({ file, outDir: dir, format: 'svg' });
     expect(outPath).toBe(join(dir, 'demo.svg'));
     expect(readFileSync(outPath, 'utf8')).toMatch(/^<svg /);
+    expect(readFileSync(outPath, 'utf8')).toContain('<circle');
+
+    await runBuild({ file, outDir: dir, format: 'svg', noChrome: true });
+    expect(readFileSync(outPath, 'utf8')).not.toContain('<circle');
   });
 
   it('propagates a positioned parse error for an invalid script', async () => {
