@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { XTERM_CSS } from '../generated/xterm-css.js';
 import { injectStyles, PLAYER_CSS } from '../styles.js';
 
 describe('PLAYER_CSS', () => {
@@ -28,6 +27,11 @@ describe('PLAYER_CSS', () => {
     }
   });
 
+  it('keeps the host defaults overridable by any page rule', () => {
+    expect(PLAYER_CSS).toMatch(/:where\(castwright-demo\)\s*{[^}]*--castwright-radius/);
+    expect(PLAYER_CSS).not.toMatch(/^castwright-demo\s*{/m);
+  });
+
   it("keeps the fallback out of the accessibility tree's way but in it", () => {
     // Not display:none — that would remove it from the accessibility tree,
     // which is the entire point of the fallback.
@@ -41,14 +45,18 @@ describe('PLAYER_CSS', () => {
 });
 
 describe('injectStyles', () => {
-  it('injects xterm and player CSS together, once', () => {
-    document.head.innerHTML = '';
+  it('adopts xterm and player CSS as one constructed sheet, once', () => {
+    document.adoptedStyleSheets = [];
     injectStyles(document);
     injectStyles(document);
 
-    const styles = document.head.querySelectorAll('style[data-castwright-styles]');
-    expect(styles).toHaveLength(1);
-    expect(styles[0]?.textContent).toContain(XTERM_CSS.slice(0, 40));
-    expect(styles[0]?.textContent).toContain('.castwright-chrome');
+    expect(document.adoptedStyleSheets).toHaveLength(1);
+    const css = [...(document.adoptedStyleSheets[0]?.cssRules ?? [])]
+      .map((rule) => rule.cssText)
+      .join('\n');
+    expect(css).toContain('.xterm');
+    expect(css).toContain('.castwright-chrome');
+    // No <style> element: that is what a strict style-src would block.
+    expect(document.querySelector('style[data-castwright-styles]')).toBeNull();
   });
 });

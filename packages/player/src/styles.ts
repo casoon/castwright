@@ -11,7 +11,10 @@ import { XTERM_CSS } from './generated/xterm-css.js';
 const STYLE_MARKER = 'data-castwright-styles';
 
 export const PLAYER_CSS = `
-castwright-demo {
+/* :where() keeps these defaults at zero specificity. The sheet sorts after the
+   page's own stylesheets, so at equal specificity a site's
+   castwright-demo { --castwright-radius: 4px } would otherwise lose to them. */
+:where(castwright-demo) {
   --castwright-radius: 10px;
   --castwright-chrome-bg: #2a2a32;
   --castwright-chrome-fg: #b8b8c4;
@@ -196,15 +199,47 @@ castwright-demo[data-controls="hover"]:focus-within .castwright-transport {
 }
 `;
 
+const adoptedSheets = new WeakMap<Document, CSSStyleSheet>();
+
 /**
  * Injects xterm.js's stylesheet followed by the player's own, once per
  * document. xterm's CSS is inlined (see scripts/generate-xterm-css.mjs) so a
  * plain HTML page needs exactly one <script> tag and no second file.
+ *
+ * Where the browser supports it, the CSS goes in as a constructed stylesheet
+ * rather than a <style> element: a Content-Security-Policy without
+ * 'unsafe-inline' for styles blocks the element but not the constructed sheet,
+ * so the player works under a hash-based policy such as Astro's. See
+ * docs/reference/player.md.
  */
 export function injectStyles(doc: Document): void {
+  if (adoptedSheets.has(doc)) return;
+  const sheet = createSheet(doc, `${XTERM_CSS}\n${PLAYER_CSS}`);
+  if (sheet) {
+    adoptedSheets.set(doc, sheet);
+    doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, sheet];
+    return;
+  }
+
   if (doc.querySelector(`style[${STYLE_MARKER}]`)) return;
   const style = doc.createElement('style');
   style.setAttribute(STYLE_MARKER, '');
   style.textContent = `${XTERM_CSS}\n${PLAYER_CSS}`;
   doc.head.appendChild(style);
+}
+
+/**
+ * A constructed stylesheet for `doc` holding `css`, or undefined where the
+ * browser has no constructable stylesheets (the caller then falls back to a
+ * <style> element). Built from the document's own window: a sheet constructed
+ * in one realm cannot be adopted by another document.
+ */
+export function createSheet(doc: Document, css: string): CSSStyleSheet | undefined {
+  const Sheet = doc.defaultView?.CSSStyleSheet;
+  if (!Sheet || !('adoptedStyleSheets' in doc) || !('replaceSync' in Sheet.prototype)) {
+    return undefined;
+  }
+  const sheet = new Sheet();
+  sheet.replaceSync(css);
+  return sheet;
 }

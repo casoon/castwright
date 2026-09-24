@@ -159,7 +159,12 @@ flowchart TB
   that edge.
 - `styles.ts` carries both the player's CSS and xterm's, the latter generated from the
   installed package by `scripts/generate-xterm-css.mjs`, so a plain HTML page needs one
-  script tag and no second file.
+  script tag and no second file. It is adopted as a constructed stylesheet, not a `<style>`
+  element, so a strict `style-src` does not block it.
+- `csp.ts` keeps xterm's own run-time styling alive under such a policy: its `<style>`
+  elements are mirrored into constructed sheets and refused `style` attributes are
+  re-applied through the CSSOM. The adapter starts it on `open()` and stops it on
+  `dispose()`.
 
 ## `@casoon/astro-castwright` — Astro ergonomics
 
