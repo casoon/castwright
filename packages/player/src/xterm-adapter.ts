@@ -6,6 +6,7 @@
 
 import * as addonFit from '@xterm/addon-fit';
 import * as xterm from '@xterm/xterm';
+import { repairInlineStyles } from './csp.js';
 import { toXtermTheme } from './theme.js';
 import type { TerminalAdapter, TerminalInit } from './types.js';
 
@@ -39,9 +40,13 @@ export function createXtermTerminal(init: TerminalInit): TerminalAdapter {
 
   const fit = new FitAddon();
   terminal.loadAddon(fit);
+  let stopRepairing = (): void => {};
 
   return {
     open(container) {
+      // Before open(), so the <style> elements xterm creates while opening are
+      // mirrored as they appear.
+      stopRepairing = repairInlineStyles(container);
       terminal.open(container);
       // xterm inserts a helper textarea to capture input. Since input is not the
       // point here, take it out of the tab order so the demo can never become a
@@ -61,6 +66,7 @@ export function createXtermTerminal(init: TerminalInit): TerminalAdapter {
     },
     dispose() {
       terminal.dispose();
+      stopRepairing();
     },
     fit() {
       try {

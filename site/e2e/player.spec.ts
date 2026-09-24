@@ -123,3 +123,42 @@ test.describe('the start page', () => {
     await expect(page.locator('main')).toContainText('npx casoon create my-app');
   });
 });
+
+test.describe('under a strict style-src', () => {
+  // A hash-based policy, as Astro's `security.csp` emits, allows no inline
+  // <style> and no style attributes. xterm styles itself both ways at run time;
+  // the player routes around it (packages/player/src/csp.ts). Only style-src is
+  // set, so the site's own inline scripts keep working.
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/demo/', async (route) => {
+      const response = await route.fetch();
+      await route.fulfill({
+        response,
+        headers: { ...response.headers(), 'content-security-policy': "style-src 'self'" },
+      });
+    });
+    await page.goto('demo/');
+  });
+
+  test('the terminal keeps its layout, palette and 24-bit colours', async ({ page }) => {
+    const demo = page.locator('#demo-colours');
+    await demo.scrollIntoViewIfNeeded();
+    await demo.locator('.xterm-rows').waitFor();
+    await demo.evaluate((el: HTMLElement & { player?: { seek(s: number): void } }) => {
+      el.player?.seek(9999);
+    });
+    const rows = demo.locator('.xterm-rows');
+    await expect(rows).toContainText('#f38ba8');
+
+    // xterm.css (the player's constructed sheet): the input textarea is taken
+    // out of the flow. Unstyled, it sits in the page as a visible box.
+    await expect(demo.locator('.xterm-helper-textarea')).toHaveCSS('position', 'absolute');
+    // A palette colour comes from xterm's runtime theme <style>.
+    await expect(rows.getByText('red', { exact: true })).toHaveCSS('color', 'rgb(205, 0, 0)');
+    // A 24-bit colour comes from a style attribute on the cell.
+    await expect(rows.getByText('#f38ba8', { exact: true })).toHaveCSS(
+      'color',
+      'rgb(243, 139, 168)',
+    );
+  });
+});

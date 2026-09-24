@@ -140,6 +140,28 @@ Qwik, and no `ssr.noExternal` entry to add.
 `deserializeCast`, `buildTimeline` and `toXtermTheme` are pure and work on the server.
 `mount()` needs a real DOM — call it from `onMount`, `useEffect`, or a `<script>`.
 
+## Content-Security-Policy
+
+The player needs no `'unsafe-inline'` for styles, so it works under a hash- or
+nonce-based policy such as the one Astro's `security.csp` emits. Its own CSS and
+xterm.js's go in as a constructed stylesheet (`document.adoptedStyleSheets`), which
+`style-src` does not govern.
+
+xterm.js itself styles the terminal at run time in two ways a strict `style-src` blocks:
+`<style>` elements whose contents depend on the theme and the measured cell size, and
+`style` attributes on cells with 24-bit colour. The player repairs both as they appear —
+each `<style>` is mirrored into a constructed stylesheet, and a refused `style` attribute
+is re-applied through the CSSOM. Browsers still report the blocked originals as CSP
+violations in the console; the terminal renders correctly regardless. Where the policy
+allows inline styles, both repairs change nothing.
+
+The script itself is an ordinary module script, so `script-src 'self'` covers it when it
+is served from the site. Verified in Chromium and WebKit.
+
+If the page cannot load a script at all, the animated SVG export
+(`castwright build --format svg`) needs neither: embedded as an `<img>`, it is subject
+only to `img-src`.
+
 ## Lazy by default
 
 xterm.js is not instantiated until the element first scrolls into view, and playback

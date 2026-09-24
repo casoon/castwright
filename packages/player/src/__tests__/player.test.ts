@@ -60,10 +60,10 @@ describe('mount — structure', () => {
     document.body.appendChild(second);
     mount(second, cast, { reducedMotion: false, createTerminal: createFakeTerminal });
 
-    const styles = document.head.querySelectorAll('style[data-castwright-styles]');
-    expect(styles).toHaveLength(1);
-    expect(styles[0]?.textContent).toContain('.xterm');
-    expect(styles[0]?.textContent).toContain('.castwright-chrome');
+    const ours = document.adoptedStyleSheets.filter((sheet) =>
+      [...sheet.cssRules].some((rule) => rule.cssText.includes('.castwright-chrome')),
+    );
+    expect(ours).toHaveLength(1);
   });
 
   it('passes the cast dimensions and theme to the terminal', () => {
