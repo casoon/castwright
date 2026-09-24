@@ -49,23 +49,28 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "yaml": "^2.9.1",
-    "@xterm/headless": "^6.0.0"
+    "@xterm/headless": "^6.0.0",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
+    "@types/node": "^22.20.4",
+    "shiki": "^4.4.3",
     "typescript": "^5.9.3",
-    "vite": "^7.1.11",
-    "@types/node": "^22.20.4"
+    "vite": "^7.1.11"
   },
   "peerDependencies": {
-    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0",
-    "@casoon/castwright-player": "workspace:^"
+    "@casoon/castwright-player": "workspace:^",
+    "shiki": "^4.0.0",
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "peerDependenciesMeta": {
-    "vite": {
+    "@casoon/castwright-player": {
       "optional": true
     },
-    "@casoon/castwright-player": {
+    "shiki": {
+      "optional": true
+    },
+    "vite": {
       "optional": true
     }
   }

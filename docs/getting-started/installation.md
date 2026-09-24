@@ -17,6 +17,9 @@ yet, so the commands below will not resolve until the first release.
 | `@casoon/castwright-player` | `<castwright-demo>`, the web component | Whenever a demo appears in a browser |
 | `@casoon/astro-castwright` | Astro integration and `<TerminalDemo />` | Astro projects only |
 
+`shiki` is an optional extra: add it only if your demos use the
+[`show`](../../reference/dsl/#show) step.
+
 ## Astro
 
 ```bash

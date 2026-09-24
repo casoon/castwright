@@ -118,6 +118,10 @@ function compileStep(step: Step, ctx: Ctx): void {
     case 'marker':
       compileMarker(step, ctx);
       return;
+    case 'show':
+      throw new Error(
+        `step 'show' (${step.file}) must be resolved before compiling — call resolveShowSteps() first`,
+      );
   }
 }
 

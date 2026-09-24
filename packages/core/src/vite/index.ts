@@ -13,12 +13,14 @@ import { compile } from '../compiler/compile.js';
 import { finalFrameText } from '../compiler/final-frame.js';
 import { CastwrightParseError } from '../parser/errors.js';
 import { parse } from '../parser/parse.js';
+import { resolveShowSteps } from '../show/resolve.js';
 
 /** The shape of a Vite plugin, declared locally to avoid importing vite. */
 interface VitePluginLike {
   name: string;
   enforce?: 'pre' | 'post';
   transform?: (
+    this: { addWatchFile(id: string): void },
     code: string,
     id: string,
   ) => Promise<{ code: string; map: null } | null> | { code: string; map: null } | null;
@@ -83,7 +85,11 @@ export function castwright(options: CastwrightPluginOptions = {}): VitePluginLik
 
       let cast: import('../types.js').Cast;
       try {
-        cast = compile(parse(source, file));
+        const { script, files } = await resolveShowSteps(parse(source, file), file);
+        // A file shown with `show:` is part of this module: editing it must
+        // recompile the demo, in dev (HMR) and in watch builds alike.
+        for (const shown of files) this.addWatchFile(shown);
+        cast = compile(script);
       } catch (error) {
         if (error instanceof CastwrightParseError) {
           // A compile error must be a build error with file/line/column, not a

@@ -4,6 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compile } from '../compiler/compile.js';
 import { parse } from '../parser/parse.js';
+import { resolveShowSteps } from '../show/resolve.js';
 import { CliUsageError } from './errors.js';
 import { FORMAT_NAMES, getFormat } from './formats.js';
 import { outputBaseName, printWarning } from './util.js';
@@ -60,7 +61,8 @@ export async function runBuild(options: BuildOptions): Promise<string> {
   const script = parse(source, options.file, {
     onWarning: (message, line, column) => printWarning(options.file, message, line, column),
   });
-  const cast = compile(script);
+  const { script: resolved } = await resolveShowSteps(script, options.file);
+  const cast = compile(resolved);
   const content = await outputFormat.render(cast);
 
   mkdirSync(options.outDir, { recursive: true });
