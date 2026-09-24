@@ -201,8 +201,21 @@ function mix(a: string, b: string, t: number): string {
   return rgbHex(r ?? 0, g ?? 0, bl ?? 0);
 }
 
+/**
+ * XML-escapes `text` for either a text node or a double-quoted attribute value.
+ *
+ * `"` is in the list because the title reaches `aria-label="…"`: without it a
+ * title containing a quote closed the attribute early and the whole document
+ * stopped being well-formed XML, which for an SVG means the browser renders
+ * nothing at all. Escaping it in text nodes too is harmless — `&quot;` is a
+ * plain quote there.
+ */
 function escapeXml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 /** Compact number formatting: at most two decimals, no trailing zeros. */

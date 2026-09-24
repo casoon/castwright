@@ -91,13 +91,25 @@ describe('renderSvg', () => {
     expect(svg).not.toContain('class="cur"');
   });
 
-  it('escapes text and the title', async () => {
+  it('escapes text, the title, and the attribute the title also lands in', async () => {
+    // The quote is the dangerous character: the title is interpolated into
+    // aria-label="…", where a raw " closes the attribute and the document stops
+    // being well-formed XML — which for an SVG means the browser draws nothing.
     const svg = await renderSvg({
-      header: { ...header(), title: 'a<b>' },
-      events: [[0, 'o', '<&>']],
+      header: { ...header(), title: 'say "hi" & <tags>' },
+      events: [[0, 'o', '<&>"']],
     });
-    expect(svg).toContain('&lt;&amp;&gt;');
-    expect(svg).toContain('<title>a&lt;b&gt;</title>');
+
+    const escaped = 'say &quot;hi&quot; &amp; &lt;tags&gt;';
+    expect(svg).toContain(`aria-label="${escaped}"`);
+    expect(svg).toContain(`<title>${escaped}</title>`);
+    expect(svg).toContain('&lt;&amp;&gt;&quot;');
+
+    // Read the attribute back the way a parser would — up to the first quote —
+    // so an escaping hole shows up as a value that ended too early rather than
+    // as a substring that happens to be present somewhere.
+    const after = svg.slice(svg.indexOf('aria-label="') + 'aria-label="'.length);
+    expect(after.slice(0, after.indexOf('"'))).toBe(escaped);
   });
 
   it('drops the title bar with chrome: false', async () => {
