@@ -388,3 +388,40 @@ describe('mount — chrome and controls modes', () => {
     warn.mockRestore();
   });
 });
+
+describe('mount — the window body', () => {
+  it("takes the cast's own background, so a terminal narrower than the window is not a hole", () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    mount(
+      host,
+      {
+        header: {
+          version: 2,
+          width: 40,
+          height: 6,
+          theme: {
+            foreground: '#cdd6f4',
+            background: '#1e1e2e',
+            cursor: '#f5e0dc',
+            palette: [],
+          },
+        },
+        events: [[0, 'o', 'hi']],
+      },
+      { createTerminal: (init) => createFakeTerminal(init) },
+    );
+    expect(host.style.getPropertyValue('--castwright-cast-bg')).toBe('#1e1e2e');
+  });
+
+  it('sets nothing for a cast without a theme, so the chrome colour is used', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    mount(
+      host,
+      { header: { version: 2, width: 40, height: 6 }, events: [[0, 'o', 'hi']] },
+      { createTerminal: (init) => createFakeTerminal(init) },
+    );
+    expect(host.style.getPropertyValue('--castwright-cast-bg')).toBe('');
+  });
+});

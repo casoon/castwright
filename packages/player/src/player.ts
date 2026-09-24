@@ -62,6 +62,12 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     controls,
   });
 
+  // So the window body matches the terminal rather than the page behind it —
+  // see the note on .castwright-screen in styles.ts.
+  if (cast.header.theme) {
+    host.style.setProperty('--castwright-cast-bg', cast.header.theme.background);
+  }
+
   host.setAttribute('role', 'group');
   host.setAttribute(
     'aria-label',

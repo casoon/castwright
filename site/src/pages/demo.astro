@@ -64,19 +64,20 @@ steps:
   title="Live demo"
   description="castwright running in the page: the same casts the test suite compiles, played by the real player."
 >
-  <h1>Live demo</h1>
-  <p class="lead">
+  <div class="page">
+    <h1>Live demo</h1>
+    <p class="lead">
     Everything below is the player itself, running here. The casts were compiled during
     this build by castwright's own Vite plugin, from the YAML shown next to each one.
-  </p>
+    </p>
 
-  <Callout type="tip">
+    <Callout type="tip">
     Try the controls with the keyboard, and try the page with reduced motion switched on —
     the demos then show their final frame immediately instead of animating, with the
     controls still there for anyone who does want to watch.
-  </Callout>
+    </Callout>
 
-  {
+    {
     demos.map(({ id, demo, title, source }) => (
       <Demo
         title={title}
@@ -103,16 +104,16 @@ steps:
         </castwright-demo>
       </Demo>
     ))
-  }
+    }
 
-  <h2>Without the chrome</h2>
-  <p>
+    <h2>Without the chrome</h2>
+    <p>
     For a hero section you often want the terminal and nothing else. The controls are
     still there — hover the demo, or tab to it — because a loop that never stops needs a
     way to stop it.
-  </p>
+    </p>
 
-  <Demo title="Bare, looping" label="Bare terminal demo">
+    <Demo title="Bare, looping" label="Bare terminal demo">
     <CodeBlock
       slot="controls"
       code={'<TerminalDemo demo={demo} autoplay loop chrome="none" controls="hover" />'}
@@ -134,5 +135,34 @@ steps:
       />
       <pre>{hero.finalFrame}</pre>
     </castwright-demo>
-  </Demo>
+    </Demo>
+  </div>
 </Base>
+
+<style>
+  /* This page emits its own prose and cards rather than the theme's
+     self-centring section components, so it carries the container itself —
+     the same one the theme's own showcase and changelog routes use. */
+  .page {
+    display: grid;
+    gap: 28px;
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+  .page > h1 {
+    margin: 0;
+  }
+  .page > .lead {
+    max-width: 68ch;
+    margin: -16px 0 0;
+    color: var(--muted);
+  }
+  .page > h2 {
+    margin: 20px 0 0;
+  }
+  .page > p {
+    max-width: 68ch;
+    margin: -16px 0 0;
+  }
+</style>

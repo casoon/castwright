@@ -6,8 +6,9 @@ order: 2
 
 An animated terminal is decorative motion containing text, which makes it an
 accessibility problem unless it is designed not to be. castwright treats WCAG 2.2 AA as a
-requirement rather than an aspiration, and the project's own documentation site is
-checked against it with axe-core in CI, on desktop and mobile viewports.
+requirement rather than an aspiration. Every page of this site is checked against it with
+axe-core, in light and dark, before each release, and CI drives the player itself in a
+real browser on desktop and mobile viewports.
 
 ## The element's children are the content
 

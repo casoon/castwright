@@ -1,5 +1,10 @@
 {
   "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    // The site dogfoods the Vite plugin, so it needs the same `*.terminal.yaml`
+    // module declarations a consumer would add — see packages/core/types/.
+    "types": ["@casoon/castwright/vite/client"]
+  },
   "include": [".astro/types.d.ts", "**/*"],
   // vendor/ is the synced theme; it is checked where it is developed (gh-pages-template).
   "exclude": ["dist", "vendor"]

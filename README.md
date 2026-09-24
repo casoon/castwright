@@ -119,8 +119,9 @@ The element's children are the content: an undefined custom element renders them
 terminal's final text is real, selectable, screen-reader-addressable text before the
 script loads and forever if it never does. The Astro component generates it at build time.
 `prefers-reduced-motion` shows the final frame immediately, there is always a real pause
-button, and the terminal is never a keyboard trap. Every documentation page is checked
-against WCAG 2.2 AA with axe-core in CI, on desktop and mobile viewports.
+button, and the terminal is never a keyboard trap. Every page of the site is checked
+against WCAG 2.2 AA with axe-core, in light and dark, before each release; CI runs the
+player itself in a real browser on desktop and mobile viewports.
 
 ## Documentation
 

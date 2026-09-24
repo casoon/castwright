@@ -48,16 +48,18 @@ const heroAnsi = cast.events
     <Terminal slot="output" title="examples/basic.terminal.yaml" dots ansi={heroAnsi} />
   </Hero>
 
-  <Callout type="note">
-    Pre-release. The packages are complete and tested but not on npm yet, so the install
-    commands above will not resolve until the first release. Everything on this site is
-    built from the repository as it stands.
-  </Callout>
+  <div class="note">
+    <Callout type="note">
+      Pre-release. The packages are complete and tested but not on npm yet, so the install
+      commands above will not resolve until the first release. Everything on this site is
+      built from the repository as it stands.
+    </Callout>
+  </div>
 
   <Facts
     items={[
-      { value: '223', label: 'unit tests' },
-      { value: '40', label: 'browser tests, desktop and mobile' },
+      { value: '305', label: 'unit tests' },
+      { value: '20', label: 'browser tests, desktop and mobile' },
       { value: '0', label: 'axe violations at WCAG 2.2 AA' },
       { value: '0 kB', label: 'parser or compiler shipped to the browser' },
     ]}
@@ -102,3 +104,13 @@ const heroAnsi = cast.events
     <CodeBlock code={ASTRO_USAGE} lang="astro" title="src/pages/index.astro" />
   </Quickstart>
 </Base>
+
+<style>
+  /* Every theme section centres itself; a bare Callout dropped between two of
+     them does not, and ran the full width of the viewport. */
+  .note {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+</style>

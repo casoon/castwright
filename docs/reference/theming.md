@@ -44,6 +44,9 @@ castwright-demo {
   --castwright-shadow: 0 8px 30px rgb(0 0 0 / 0.22);
   --castwright-padding: 12px;
   --castwright-accent: #7aa2f7;
+  /* The window body behind the terminal. Defaults to the cast's own background,
+     so the window looks solid even when the terminal does not fill it. */
+  --castwright-screen-bg: #1e1e2e;
   --castwright-font: ui-monospace, "JetBrains Mono", Menlo, monospace;
 }
 ```

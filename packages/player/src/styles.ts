@@ -70,6 +70,12 @@ castwright-demo {
 
 .castwright-screen {
   padding: var(--castwright-padding);
+  /* The terminal keeps its authored geometry and is never scaled up, so on a
+     wide page it does not fill the window. Without a background of its own the
+     remaining area showed whatever was behind the element, and the window read
+     as a frame with a hole in it. The cast's own background is the right colour
+     for it; --castwright-screen-bg lets a page override that. */
+  background: var(--castwright-screen-bg, var(--castwright-cast-bg, var(--castwright-chrome-bg)));
   overflow: hidden;
   /* Without this the terminal's ~700px min-content width propagates up through
      every ancestor, and any grid or flex container above (whose items default to
