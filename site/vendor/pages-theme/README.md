@@ -117,7 +117,8 @@ Import from `@casoon/pages-theme/components` in `.astro` files; available direct
 | `Demo` | Stage for the project running live in the page; see „Live demo" |
 
 `@casoon/pages-theme/ansi` exports `ansiToHtml` and `escapeAnsi` for projects without their
-own renderer. `@casoon/pages-theme/layouts/Base.astro` wraps custom pages in the frame, and
+own renderer. `ansiToHtml` renders the 16-colour palette as classes (so the theme's colours
+apply) and 256-colour and 24-bit colour — foreground and background — as inline styles. `@casoon/pages-theme/layouts/Base.astro` wraps custom pages in the frame, and
 `@casoon/pages-theme/url` exports `url()` — a project page that links or loads something
 site-internal needs it, because the base path changes per project.
 

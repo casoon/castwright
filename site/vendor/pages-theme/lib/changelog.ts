@@ -33,7 +33,7 @@ export function inlineMarkdown(md: string): string {
         ? `<code>${escapeHtml(part)}</code>`
         : escapeHtml(part)
             .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>'),
+            .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>')
     )
     .join('');
 }

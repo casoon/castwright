@@ -93,11 +93,9 @@ offending value.
 
 `.inf` and `.nan` are numbers as far as YAML is concerned and are rejected here.
 
-<Callout type="note">
-`prompt` means two things depending on company. Alongside `run` or `type` it is the
-boolean modifier above. Alone, it is the primary step that changes the prompt from there
-on. The presence of `run`/`type` is what decides.
-</Callout>
+> **Note:** `prompt` means two things depending on company. Alongside `run` or `type` it is the
+> boolean modifier above. Alone, it is the primary step that changes the prompt from there
+> on. The presence of `run`/`type` is what decides.
 
 ### show
 
@@ -177,10 +175,8 @@ and when `exec` runs in CI.
 pnpm add -D node-pty
 ```
 
-<Callout type="caution">
-node-pty 1.1.0 ships its macOS helper without the executable bit. If `exec` fails with
-"posix_spawnp failed", the error names the file; `chmod +x` it once.
-</Callout>
+> **Caution:** node-pty 1.1.0 ships its macOS helper without the executable bit. If `exec` fails with
+> "posix_spawnp failed", the error names the file; `chmod +x` it once.
 
 ## Colour and style
 

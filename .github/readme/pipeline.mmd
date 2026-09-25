@@ -1,0 +1,12 @@
+flowchart LR
+  subgraph build["Build time — Node, no browser"]
+    direction LR
+    Y[".terminal.yaml"] --> P["parse"]
+    P --> R["resolve<br/>show: · exec:"]
+    R --> C["compile"]
+  end
+  C --> K[".cast<br/>asciicast v2"]
+  K --> PL["&lt;castwright-demo&gt;<br/>xterm.js in the page"]
+  K --> S["animated SVG<br/>for a README"]
+  K --> G["GIF · MP4<br/>via agg · ffmpeg"]
+  K --> A["asciinema play,<br/>any v2 player"]

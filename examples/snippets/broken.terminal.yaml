@@ -1,0 +1,5 @@
+version: 1
+terminal: { cols: 72, rows: 12 }
+steps:
+  - run: npm test
+    sped: 30

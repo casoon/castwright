@@ -2,6 +2,7 @@
 
 **Declarative terminal demos for the web.**
 
+[![npm](https://img.shields.io/npm/v/@casoon/castwright)](https://www.npmjs.com/package/@casoon/castwright)
 [![CI](https://github.com/casoon/castwright/actions/workflows/ci.yml/badge.svg)](https://github.com/casoon/castwright/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-informational)](package.json)
@@ -12,6 +13,13 @@ Write a small YAML file describing a terminal session. castwright compiles it to
 [asciicast v2](https://docs.asciinema.org/manual/asciicast/v2/) and plays it as a real
 terminal — real ANSI, real cursor movement, selectable text — via
 [xterm.js](https://xtermjs.org/), with no headless browser anywhere in your build.
+
+<p align="center">
+  <img src=".github/readme/basic.svg" alt="A terminal demo: npx casoon create my-app is typed, three green check marks follow, then npm run dev prints a local URL." width="696">
+</p>
+
+<p align="center"><sub>Every terminal image in this README is castwright's own <code>--format svg</code>
+export of a file in <a href="examples/"><code>examples/</code></a> — animated, no GIF, no JavaScript.</sub></p>
 
 ```yaml
 # demo.terminal.yaml
@@ -39,6 +47,60 @@ import demo from '../demos/demo.terminal.yaml';
 ---
 <TerminalDemo demo={demo} autoplay loop />
 ```
+
+## Examples
+
+### A file on screen, highlighted at build time
+
+[`show:`](docs/reference/dsl.md#show) puts a file into the demo with syntax highlighting —
+Shiki at build time, 24-bit colour in the cast, nothing extra in the browser.
+
+```yaml
+steps:
+  - run: cat astro.config.ts
+  - show: snippets/astro.config.ts
+```
+
+<p align="center">
+  <img src=".github/readme/show.svg" alt="cat astro.config.ts, followed by the file with TypeScript syntax highlighting in Catppuccin colours." width="562">
+</p>
+
+### A real command, recorded once
+
+[`exec:`](docs/reference/dsl.md#exec) runs a command for real, in a pseudo-terminal the
+size of the demo. `--record` then writes what it printed back into the file, so every
+later build replays those exact bytes instead of running anything.
+
+```yaml
+steps:
+  - exec: castwright validate broken.terminal.yaml
+    cwd: snippets
+```
+
+```bash
+castwright build demo.terminal.yaml --allow-exec --record
+```
+
+<p align="center">
+  <img src=".github/readme/recorded.svg" alt="castwright validate reports: broken.terminal.yaml line 5, column 5, unknown key 'sped' in step 'run', with the known keys and a caret under the typo." width="948">
+</p>
+
+That is castwright's real error output for a typo, recorded from an actual run —
+[`examples/recorded.terminal.yaml`](examples/recorded.terminal.yaml) is the file `--record`
+wrote.
+
+## How it works
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/readme/pipeline-dark.svg">
+    <img src=".github/readme/pipeline-light.svg" alt="Build time, in Node without a browser: a .terminal.yaml is parsed, show: and exec: steps are resolved, and the result compiles to a .cast file in asciicast v2. That one file feeds the castwright-demo player in the page, an animated SVG for a README, a GIF or MP4 via agg and ffmpeg, and any asciinema v2 player.">
+  </picture>
+</p>
+
+The DSL stops existing after the compile step: everything downstream reads asciicast v2,
+so the player also plays a real `asciinema rec` recording, and the asciinema tools work on
+castwright's output. [`meta/architecture.md`](meta/architecture.md) has the detail.
 
 ## Why
 
@@ -172,6 +234,13 @@ pnpm --filter castwright-site test:e2e   # Playwright: the player in a real brow
 ```
 
 `site/README.md` covers the pages check that runs before a release.
+
+The images in this README are generated, not drawn:
+
+```bash
+pnpm readme:assets                         # the terminal demos, from examples/
+CHROME=/path/to/chrome pnpm readme:assets  # …and the pipeline diagram, from pipeline.mmd
+```
 
 ## Contributing
 

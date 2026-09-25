@@ -22,9 +22,20 @@ export default defineConfig({
       repo: 'casoon/castwright',
       version,
       license: 'MIT',
-      // Nothing is published yet, so there is nothing to link to that would not
-      // 404. The start page says so rather than the header implying otherwise.
-      packages: [],
+      packages: [
+        {
+          label: 'npm: @casoon/castwright',
+          href: 'https://www.npmjs.com/package/@casoon/castwright',
+        },
+        {
+          label: 'npm: @casoon/castwright-player',
+          href: 'https://www.npmjs.com/package/@casoon/castwright-player',
+        },
+        {
+          label: 'npm: @casoon/astro-castwright',
+          href: 'https://www.npmjs.com/package/@casoon/astro-castwright',
+        },
+      ],
       demo: 'Live demo',
       docsGroups: {
         'getting-started': 'Getting started',

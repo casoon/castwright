@@ -15,6 +15,7 @@
       "!pnpm-lock.yaml",
       "!plan",
       "!**/src/generated",
+      "!.github/readme",
       "!site/vendor",
       "!site/dist",
       "!site/.astro"

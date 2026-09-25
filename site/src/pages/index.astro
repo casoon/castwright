@@ -4,7 +4,6 @@ import {
   Badge,
   Badges,
   BuildOutput,
-  Callout,
   CodeBlock,
   Facts,
   Features,
@@ -48,18 +47,10 @@ const heroAnsi = cast.events
     <Terminal slot="output" title="examples/basic.terminal.yaml" dots ansi={heroAnsi} />
   </Hero>
 
-  <div class="note">
-    <Callout type="note">
-      Pre-release. The packages are complete and tested but not on npm yet, so the install
-      commands above will not resolve until the first release. Everything on this site is
-      built from the repository as it stands.
-    </Callout>
-  </div>
-
   <Facts
     items={[
-      { value: '305', label: 'unit tests' },
-      { value: '20', label: 'browser tests, desktop and mobile' },
+      { value: '367', label: 'unit tests' },
+      { value: '22', label: 'browser tests, desktop and mobile' },
       { value: '0', label: 'axe violations at WCAG 2.2 AA' },
       { value: '0 kB', label: 'parser or compiler shipped to the browser' },
     ]}
@@ -78,6 +69,14 @@ const heroAnsi = cast.events
       {
         title: 'Deterministic output',
         body: 'The same input compiles to the same bytes on every machine. A generated .cast is a text file you commit and read in a diff, and typing jitter is seeded so it stays that way.',
+      },
+      {
+        title: 'One file, every output',
+        body: 'The same .cast plays in the page, exports to an animated SVG for a README — real text, no JavaScript — and to GIF or MP4 for everywhere else.',
+      },
+      {
+        title: 'Real files and real commands',
+        body: 'show: puts a file on screen, syntax-highlighted at build time. exec: runs a command for real, and --record writes its output back into the file so every later build replays the same bytes.',
       },
       {
         title: 'Accessible by construction',
@@ -105,12 +104,3 @@ const heroAnsi = cast.events
   </Quickstart>
 </Base>
 
-<style>
-  /* Every theme section centres itself; a bare Callout dropped between two of
-     them does not, and ran the full width of the viewport. */
-  .note {
-    max-width: var(--max);
-    margin: 0 auto;
-    padding: 0 24px;
-  }
-</style>

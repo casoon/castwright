@@ -4,11 +4,6 @@ description: Three packages, and which of them you actually need.
 order: 1
 ---
 
-<Callout type="note">
-castwright is pre-release. The packages are complete and tested but not published to npm
-yet, so the commands below will not resolve until the first release.
-</Callout>
-
 ## The three packages
 
 | Package | What it is | When you need it |
@@ -81,7 +76,5 @@ added 42 packages</pre>
 </castwright-demo>
 ```
 
-<Callout type="caution">
-The `<pre>` is not decoration. It is what a screen reader and a visitor without
-JavaScript get — see [Accessibility](../../guides/accessibility/).
-</Callout>
+> **Caution:** The `<pre>` is not decoration. It is what a screen reader and a visitor without
+> JavaScript get — see [Accessibility](../../guides/accessibility/).
