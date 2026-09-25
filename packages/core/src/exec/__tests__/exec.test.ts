@@ -52,14 +52,20 @@ describe('parse — exec:', () => {
 describe('resolveExecSteps', () => {
   let dir: string;
   let file: string;
+  // The build warns when exec: runs in CI; these tests assert exact warnings,
+  // so they must not depend on where they run.
+  const ci = process.env['CI'];
 
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'castwright-exec-'));
     file = join(dir, 'demo.terminal.yaml');
+    delete process.env['CI'];
   });
 
   afterEach(() => {
     rmSync(dir, { recursive: true, force: true });
+    if (ci === undefined) delete process.env['CI'];
+    else process.env['CI'] = ci;
   });
 
   const resolve = (steps: string, warnings: string[] = []) =>
@@ -123,6 +129,13 @@ describe('resolveExecSteps', () => {
     const warnings: string[] = [];
     await resolve(`  - exec: echo ghp_${'a'.repeat(36)}\n`, warnings);
     expect(warnings).toEqual([expect.stringMatching(/GitHub token/)]);
+  });
+
+  it('warns when it runs in CI', async () => {
+    process.env['CI'] = 'true';
+    const warnings: string[] = [];
+    await resolve('  - exec: echo hi\n', warnings);
+    expect(warnings).toEqual([expect.stringMatching(/running 'exec' steps in CI/)]);
   });
 
   it('kills a command that runs past its timeout, pointing at the step', async () => {
