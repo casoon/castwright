@@ -67,6 +67,7 @@ function page(title: string): string {
 export interface DevOptions {
   file: string;
   port: number;
+  allowExec?: boolean;
 }
 
 export async function runDev(options: DevOptions): Promise<void> {
@@ -99,7 +100,7 @@ el.prepend(pre);
     root: dirname(file),
     server: { port: options.port },
     plugins: [
-      castwright(),
+      castwright({ allowExec: options.allowExec ?? false }),
       {
         name: 'castwright-dev-page',
         resolveId(id: string) {

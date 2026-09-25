@@ -20,6 +20,7 @@
     "test:pack": "pnpm build && node scripts/pack-smoke-test.mjs",
     "test:compat": "pnpm --filter @casoon/castwright build && node scripts/asciicast-compat-test.mjs",
     "test:watch": "vitest",
+    "postinstall": "node scripts/fix-node-pty-helper.mjs",
     "changeset": "changeset",
     "release": "changeset publish"
   },

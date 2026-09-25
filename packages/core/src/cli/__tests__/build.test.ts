@@ -59,6 +59,19 @@ describe('parseBuildArgs', () => {
     );
   });
 
+  it('accepts --allow-exec, and --record only together with it', () => {
+    expect(parseBuildArgs(['d.terminal.yaml', '--allow-exec', '--record'])).toEqual({
+      file: 'd.terminal.yaml',
+      outDir: 'dist',
+      format: 'cast',
+      allowExec: true,
+      record: true,
+    });
+    expect(() => parseBuildArgs(['d.terminal.yaml', '--record'])).toThrow(
+      /--record runs the exec: steps, so it needs --allow-exec too/,
+    );
+  });
+
   it('rejects a missing file', () => {
     expect(() => parseBuildArgs([])).toThrow(CliUsageError);
   });

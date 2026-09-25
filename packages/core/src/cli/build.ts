@@ -3,6 +3,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compile } from '../compiler/compile.js';
+import { recordIntoSource } from '../exec/record.js';
+import { resolveExecSteps } from '../exec/resolve.js';
 import { parse } from '../parser/parse.js';
 import { resolveShowSteps } from '../show/resolve.js';
 import { CliUsageError } from './errors.js';
@@ -17,10 +19,14 @@ export interface BuildOptions {
   noChrome?: boolean;
   /** SVG only: ms the last frame holds before the loop restarts. */
   loopDelay?: number;
+  /** Let `exec:` steps run their commands. */
+  allowExec?: boolean;
+  /** Write what `exec:` steps produced back into the YAML file. Implies running them. */
+  record?: boolean;
 }
 
 const USAGE =
-  'usage: castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>]';
+  'usage: castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--allow-exec [--record]]';
 
 export function parseBuildArgs(args: string[]): BuildOptions {
   let file: string | undefined;
@@ -28,6 +34,8 @@ export function parseBuildArgs(args: string[]): BuildOptions {
   let format = 'cast';
   let noChrome = false;
   let loopDelay: number | undefined;
+  let allowExec = false;
+  let record = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -48,6 +56,10 @@ export function parseBuildArgs(args: string[]): BuildOptions {
         throw new CliUsageError(`--loop-delay requires a whole number of milliseconds\n${USAGE}`);
       }
       loopDelay = ms;
+    } else if (arg === '--allow-exec') {
+      allowExec = true;
+    } else if (arg === '--record') {
+      record = true;
     } else if (arg?.startsWith('-')) {
       throw new CliUsageError(`unknown option '${arg}'\n${USAGE}`);
     } else if (file === undefined) {
@@ -66,12 +78,21 @@ export function parseBuildArgs(args: string[]): BuildOptions {
     throw new CliUsageError(`${flag} only applies to --format svg\n${USAGE}`);
   }
 
+  // Recording runs the commands, and running them is never implied.
+  if (record && !allowExec) {
+    throw new CliUsageError(
+      `--record runs the exec: steps, so it needs --allow-exec too\n${USAGE}`,
+    );
+  }
+
   return {
     file,
     outDir,
     format,
     ...(noChrome ? { noChrome } : {}),
     ...(loopDelay === undefined ? {} : { loopDelay }),
+    ...(allowExec ? { allowExec } : {}),
+    ...(record ? { record } : {}),
   };
 }
 
@@ -84,10 +105,22 @@ export async function runBuild(options: BuildOptions): Promise<string> {
     );
   }
 
-  const source = readFileSync(options.file, 'utf8');
-  const script = parse(source, options.file, {
-    onWarning: (message, line, column) => printWarning(options.file, message, line, column),
+  const onWarning = (message: string, line: number, column: number): void =>
+    printWarning(options.file, message, line, column);
+  let source = readFileSync(options.file, 'utf8');
+  let script = parse(source, options.file, { onWarning });
+  const executed = await resolveExecSteps(script, options.file, {
+    ...(options.allowExec ? { allowExec: true } : {}),
+    onWarning,
   });
+  script = executed.script;
+  if (options.record && executed.recordings.length > 0) {
+    // From here on the file replays what was recorded; build from that, so the
+    // artifact matches what every later build will produce.
+    source = recordIntoSource(source, executed.recordings);
+    writeFileSync(options.file, source);
+    script = parse(source, options.file, { onWarning });
+  }
   const { script: resolved } = await resolveShowSteps(script, options.file);
   const cast = compile(resolved);
   const content = await outputFormat.render(cast, {

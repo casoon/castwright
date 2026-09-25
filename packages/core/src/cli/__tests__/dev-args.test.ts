@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { parseDevArgs } from '../dev-args.js';
 import { CliUsageError } from '../errors.js';
 
+describe('parseDevArgs — --allow-exec', () => {
+  it('passes --allow-exec through', () => {
+    expect(parseDevArgs(['d.terminal.yaml', '--allow-exec'])).toEqual({
+      file: 'd.terminal.yaml',
+      port: 4321,
+      allowExec: true,
+    });
+  });
+});
+
 describe('parseDevArgs', () => {
   it('defaults the port', () => {
     expect(parseDevArgs(['demo.terminal.yaml'])).toEqual({

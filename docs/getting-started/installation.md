@@ -18,7 +18,8 @@ yet, so the commands below will not resolve until the first release.
 | `@casoon/astro-castwright` | Astro integration and `<TerminalDemo />` | Astro projects only |
 
 `shiki` is an optional extra: add it only if your demos use the
-[`show`](../../reference/dsl/#show) step.
+[`show`](../../reference/dsl/#show) step. Likewise `node-pty`, a native module, only for
+the [`exec`](../../reference/dsl/#exec) step.
 
 ## Astro
 
