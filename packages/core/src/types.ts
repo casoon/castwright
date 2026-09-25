@@ -80,7 +80,8 @@ export type Step =
   | { kind: 'clear'; pause: number }
   | { kind: 'prompt'; prompt: Styled; pause: number }
   | { kind: 'marker'; label: string; pause: number }
-  | ShowStep;
+  | ShowStep
+  | ExecStep;
 
 /**
  * `show:` — a file's contents, syntax-highlighted. It cannot be compiled as
@@ -99,6 +100,31 @@ export interface ShowStep {
   /** A Shiki theme name; default: the one matching the terminal theme. */
   theme?: string;
   lineDelay: number;
+  pause: number;
+  source: { line: number; column: number; text: string };
+}
+
+/**
+ * `exec:` — a command that really runs, in a pseudo-terminal, with its output
+ * recorded into the demo. Like `show:` it cannot be compiled as is:
+ * `resolveExecSteps()` runs it and turns it into `type`, `output` and `wait`
+ * steps before `compile()`. It only runs when the caller passes `allowExec`.
+ */
+export interface ExecStep {
+  kind: 'exec';
+  /** Literal — no markup, since `{…}` is common in shell commands. */
+  command: string;
+  /** As written — relative to the `.terminal.yaml` it appears in. */
+  cwd?: string;
+  env?: Record<string, string>;
+  /** ms before the command is killed and the build fails. */
+  timeout: number;
+  /** Longest pause kept between two pieces of output, in ms; longer ones are shortened. */
+  idle?: number;
+  /** ms per typed character of the command. */
+  speed: number;
+  /** Write the prompt before typing the command, as `run:` does. */
+  prompt: boolean;
   pause: number;
   source: { line: number; column: number; text: string };
 }

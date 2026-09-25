@@ -7,7 +7,7 @@ import { castwright } from '../index.js';
 /** Stands in for Vite's plugin context; records what the plugin asks to watch. */
 function context() {
   const watched: string[] = [];
-  return { watched, addWatchFile: (id: string) => watched.push(id) };
+  return { watched, addWatchFile: (id: string) => watched.push(id), warn: () => {} };
 }
 
 /** The plugin's transform returns null for anything it does not handle. */
@@ -54,6 +54,30 @@ describe('castwright vite plugin — show:', () => {
 
       expect(ctx.watched).toEqual([join(dir, 'snippet.ts')]);
       expect(result?.code).toContain('const');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('castwright vite plugin — exec:', () => {
+  const code = 'version: 1\nterminal: { cols: 40, rows: 5 }\nsteps:\n  - exec: echo from-exec\n';
+
+  it('refuses to run a command unless allowExec is set', async () => {
+    await expect(
+      castwright().transform?.call(context(), code, '/d/x.terminal.yaml'),
+    ).rejects.toThrow(/allowExec: true/);
+  });
+
+  it('runs it with allowExec', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'castwright-vite-exec-'));
+    try {
+      const result = await castwright({ allowExec: true }).transform?.call(
+        context(),
+        code,
+        join(dir, 'demo.terminal.yaml'),
+      );
+      expect(result?.code).toContain('from-exec');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -11,9 +11,9 @@ import { parseValidateArgs, runValidate } from './validate.js';
 const USAGE = `castwright — declarative terminal demos for the web
 
 Usage:
-  castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>]
+  castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--allow-exec [--record]]
   castwright validate <file>...
-  castwright dev <file> [--port <n>]
+  castwright dev <file> [--port <n>] [--allow-exec]
 
   castwright --help
 `;

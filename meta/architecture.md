@@ -103,6 +103,13 @@ flowchart LR
 - `cli/formats.ts` is a registry (`Record<string, OutputFormat>`), not an `if` chain —
   exporters are entries here (`cast`, `svg`, `gif`, `mp4`), not branches in `build.ts`.
   A renderer may be async and may return bytes; `runBuild` awaits it.
+- Two steps can only be resolved with I/O, so they run between `parse()` and `compile()`
+  and are replaced by ordinary steps there, keeping `compile()` synchronous and pure:
+  `exec/resolve.ts` runs `exec:` commands in a node-pty PTY (only with `allowExec`) and
+  turns each into `type` + `key` + `output`/`wait` steps with the recorded timing;
+  `show/resolve.ts` highlights `show:` files with Shiki into `output` steps.
+  `exec/record.ts` writes a run back into the YAML document for `--record`. The CLI and
+  the Vite plugin call both; `compile()` refuses an unresolved step.
 - `exporters/svg.ts` replays the cast into `@xterm/headless`, snapshots the screen per
   frame (changes under 30 ms merged) and defines each distinct row once. Timelines follow
   buffer lines, not frames: each line of the normal buffer sits at its index on one tall
@@ -190,4 +197,5 @@ terminal logic; both halves work in Astro without it.
 
 ## Not yet part of this architecture
 
-`exec:` mode and VHS `.tape` input.
+VHS `.tape` input — deferred: most public tapes show output that only real execution
+produces (plan item 09).

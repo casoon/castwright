@@ -9,7 +9,7 @@ Errors go to stderr, results to stdout, so the commands compose.
 ## build
 
 ```
-castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>]
+castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--allow-exec [--record]]
 ```
 
 Compiles a `*.terminal.yaml` to `<dir>/<name>.<format>` and prints the path. `-o` defaults
@@ -60,6 +60,18 @@ larger.
 does not rasterise anything itself; agg does, using the theme in the cast header, and a
 missing tool is reported with an install hint and a non-zero exit.
 
+### exec: steps
+
+| Option | Effect |
+|---|---|
+| `--allow-exec` | Lets [`exec`](../dsl/#exec) steps run their commands. Without it, a file containing one fails to build. |
+| `--record` | Runs them once and rewrites the file with what they printed, as `run` + `output`. Needs `--allow-exec`. |
+
+```bash
+castwright build demo.terminal.yaml --allow-exec --record   # once
+castwright build demo.terminal.yaml                         # every build after
+```
+
 ## validate
 
 ```
@@ -85,7 +97,7 @@ file list, and a shell has already expanded `*.terminal.yaml` before the process
 ## dev
 
 ```
-castwright dev <file> [--port <n>]
+castwright dev <file> [--port <n>] [--allow-exec]
 ```
 
 Serves one demo and reloads it on save. Edit the YAML, watch the terminal in the browser

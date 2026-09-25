@@ -11,6 +11,9 @@ export {
   toWireHeader,
   toWireTheme,
 } from './compiler/wire.js';
+export { recordIntoSource } from './exec/record.js';
+export type { ExecOptions, Recording, ResolvedExec } from './exec/resolve.js';
+export { resolveExecSteps } from './exec/resolve.js';
 export type { SourcePosition } from './parser/errors.js';
 export { CastwrightParseError } from './parser/errors.js';
 export type { ParseOptions } from './parser/parse.js';
@@ -27,6 +30,7 @@ export type {
   Color,
   CursorConfig,
   CursorStyle,
+  ExecStep,
   KeyName,
   Script,
   ShowStep,

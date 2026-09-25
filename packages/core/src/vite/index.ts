@@ -11,6 +11,7 @@
 import { readFile } from 'node:fs/promises';
 import { compile } from '../compiler/compile.js';
 import { finalFrameText } from '../compiler/final-frame.js';
+import { resolveExecSteps } from '../exec/resolve.js';
 import { CastwrightParseError } from '../parser/errors.js';
 import { parse } from '../parser/parse.js';
 import { resolveShowSteps } from '../show/resolve.js';
@@ -20,7 +21,7 @@ interface VitePluginLike {
   name: string;
   enforce?: 'pre' | 'post';
   transform?: (
-    this: { addWatchFile(id: string): void },
+    this: { addWatchFile(id: string): void; warn(message: string): void },
     code: string,
     id: string,
   ) => Promise<{ code: string; map: null } | null> | { code: string; map: null } | null;
@@ -36,6 +37,13 @@ export interface CastwrightPluginOptions {
    * time and is what keeps the demo readable before (and without) JavaScript.
    */
   emitFinalFrame?: boolean;
+  /**
+   * Let `exec:` steps run their commands. Default false: a demo file is not a
+   * script anyone should be surprised to find executing. The commands run again
+   * on every rebuild of the demo — record them with `castwright build --record`
+   * for anything that ships.
+   */
+  allowExec?: boolean;
 }
 
 // Vite's own query suffixes mean "give me this file as X" — `?raw` in
@@ -68,6 +76,7 @@ export interface TerminalYamlModule {
 export function castwright(options: CastwrightPluginOptions = {}): VitePluginLike {
   const include = options.include ?? DEFAULT_INCLUDE;
   const emitFinalFrame = options.emitFinalFrame ?? true;
+  const allowExec = options.allowExec ?? false;
 
   return {
     name: 'castwright',
@@ -85,7 +94,11 @@ export function castwright(options: CastwrightPluginOptions = {}): VitePluginLik
 
       let cast: import('../types.js').Cast;
       try {
-        const { script, files } = await resolveShowSteps(parse(source, file), file);
+        const executed = await resolveExecSteps(parse(source, file), file, {
+          allowExec,
+          onWarning: (message, line, column) => this.warn(`${file}:${line}:${column}: ${message}`),
+        });
+        const { script, files } = await resolveShowSteps(executed.script, file);
         // A file shown with `show:` is part of this module: editing it must
         // recompile the demo, in dev (HMR) and in watch builds alike.
         for (const shown of files) this.addWatchFile(shown);

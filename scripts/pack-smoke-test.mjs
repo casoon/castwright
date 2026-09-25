@@ -134,6 +134,29 @@ try {
     'the written theme uses the spec field names, not xterm’s',
   );
 
+  // node-pty is an optional peer: a plain install must not pull a native
+  // build, and exec: must then say what to install rather than crash.
+  check(!existsSync(join(modules, 'node-pty')), 'a plain install does not pull node-pty');
+  const execDemo = join(consumer, 'exec.terminal.yaml');
+  writeFileSync(
+    execDemo,
+    'version: 1\nterminal: { cols: 40, rows: 6 }\nsteps:\n  - exec: echo hi\n',
+  );
+  let execError = '';
+  try {
+    run(
+      join(modules, '.bin', 'castwright'),
+      ['build', execDemo, '-o', consumer, '--allow-exec'],
+      consumer,
+    );
+  } catch (error) {
+    execError = String(error.stderr ?? error);
+  }
+  check(
+    /node-pty, which is not installed/.test(execError),
+    'exec: without node-pty names the missing package',
+  );
+
   // The public entry points, imported for real.
   const core = await import(pathToFileURL(join(modules, '@casoon/castwright/dist/index.js')).href);
   check(typeof core.compile === 'function', '@casoon/castwright exports compile()');

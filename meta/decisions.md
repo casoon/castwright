@@ -73,14 +73,27 @@ package and is accepted.
 
 ## Simulation before execution
 
-V1 only renders authored `output:`. Running real commands through a PTY is a later,
-opt-in feature.
+Demos render authored `output:`. Running real commands (`exec:`) is opt-in per build
+and meant to be recorded back into authored output.
 
 *Reason:* documentation demos must be deterministic and reproducible in CI. Real
 execution brings machine-dependent output, timing, and secrets into a build artifact.
 
-*Consequence:* `exec:` is not part of the V1 DSL surface, and when it lands it must be
-explicitly enabled, never the default.
+*Consequence:* `exec:` runs only with `--allow-exec` / `allowExec: true`, never by
+default, and `--record` turns a run into `run:` + `output: { raw }` so the published demo
+replays fixed bytes. The build warns on token-like output, the home directory path, a
+non-zero exit, and `exec:` in CI.
+
+## Optional peer dependencies instead of feature packages
+
+Features that need a heavy or native dependency — Shiki for `show:`, node-pty for
+`exec:` — live in `@casoon/castwright` and import it dynamically, only when a script
+uses the feature. The dependency is an optional peer; without it the build stops with a
+positioned error naming the package to install.
+
+*Reason:* a package costs a release, a changelog and a support surface (see "Three
+published packages"), and a dynamic import already keeps the CLI installable without a
+native build — the pack smoke test checks that a plain install pulls no node-pty.
 
 ## Deterministic output by default
 

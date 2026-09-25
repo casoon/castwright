@@ -49,6 +49,7 @@ const PRIMARY_STEP_KEYS = [
   'key',
   'output',
   'show',
+  'exec',
   'wait',
   'clear',
   'marker',
@@ -459,6 +460,8 @@ function parseStep(node: Node, ctx: Ctx, defaults: StepDefaults, cols: number): 
       return [parseOutputStep(pair, map, ctx, defaults, cols)];
     case 'show':
       return [parseShowStep(pair, map, ctx, defaults)];
+    case 'exec':
+      return [parseExecStep(pair, map, ctx, defaults, promptPair)];
     case 'wait':
       return [parseWaitStep(pair, map, ctx)];
     case 'clear':
@@ -608,6 +611,76 @@ function parseShowStep(pair: Pair, map: YAMLMap, ctx: Ctx, defaults: StepDefault
     ...(lines === undefined ? {} : { lines }),
     ...(theme === undefined ? {} : { theme }),
     lineDelay,
+    pause,
+    source,
+  };
+}
+
+const DEFAULT_EXEC_TIMEOUT_MS = 60_000;
+
+function parseExecStep(
+  pair: Pair,
+  map: YAMLMap,
+  ctx: Ctx,
+  defaults: StepDefaults,
+  promptPair: Pair | undefined,
+): Step {
+  rejectUnknownKeys(
+    map,
+    ['exec', 'cwd', 'env', 'timeout', 'idle', 'speed', 'pause', 'prompt'],
+    ctx,
+    "step 'exec'",
+  );
+  const command = expectString(pair.value as Node, ctx, "step 'exec'", pair);
+  if (command.trim() === '') ctx.errAtNode(pair, "step 'exec' needs a command");
+
+  const cwdPair = findPair(map, 'cwd', ctx);
+  const cwd = cwdPair?.value
+    ? expectString(cwdPair.value as Node, ctx, "step 'cwd'", cwdPair)
+    : undefined;
+
+  const envPair = findPair(map, 'env', ctx);
+  let env: Record<string, string> | undefined;
+  if (envPair?.value) {
+    const envMap = expectMap(envPair.value as Node, ctx, "step 'env'", envPair);
+    env = {};
+    for (const item of envMap.items) {
+      const name = keyText(item, ctx);
+      const scalar = expectScalar(item.value as Node, ctx, `env '${name}'`, item);
+      env[name] = String(scalar.value);
+    }
+  }
+
+  const timeoutPair = findPair(map, 'timeout', ctx);
+  const timeout = timeoutPair?.value
+    ? expectNumber(timeoutPair.value as Node, ctx, "step 'timeout'", timeoutPair, {
+        ...DURATION,
+        min: 1,
+      })
+    : DEFAULT_EXEC_TIMEOUT_MS;
+  const idlePair = findPair(map, 'idle', ctx);
+  const idle = idlePair?.value
+    ? expectNumber(idlePair.value as Node, ctx, "step 'idle'", idlePair, DURATION)
+    : undefined;
+
+  const speed = readSpeed(map, ctx, defaults);
+  const prompt = promptPair
+    ? expectBoolean(promptPair.value as Node, ctx, "step 'exec' prompt", promptPair)
+    : true;
+  const pause = stepPause(map, ctx, defaults);
+
+  const position = positionAt(ctx.source, nodeOffset(pair.value as Node));
+  const source = { ...position, text: lineAt(ctx.source, position.line) };
+
+  return {
+    kind: 'exec',
+    command,
+    ...(cwd === undefined ? {} : { cwd }),
+    ...(env === undefined ? {} : { env }),
+    timeout,
+    ...(idle === undefined ? {} : { idle }),
+    speed,
+    prompt,
     pause,
     source,
   };

@@ -60,6 +60,7 @@ Exactly one primary key per step.
 | `key` | see below | Send a single key. |
 | `output` | string or `{ raw }` | Emit program output. Not typed. |
 | `show` | path | Emit a file's contents, syntax-highlighted. See [below](#show). |
+| `exec` | command | Run a real command and record its output. See [below](#exec). |
 | `wait` | ms | Pause. |
 | `clear` | `true` | Clear the screen. |
 | `prompt` | string | Change the prompt from here on. |
@@ -133,6 +134,53 @@ is what keeps it byte-identical from one build to the next.
 
 For code outside a terminal, use your site's ordinary code blocks — `show` is for a file
 that appears as part of a terminal session.
+
+### exec
+
+`exec` runs a real command and puts what it printed into the demo, with the timing it
+actually had. The command is typed at the prompt like `run`, then executed with
+`/bin/sh -c` in a pseudo-terminal the size of the demo, so programs see a real terminal
+and colour their output.
+
+```yaml
+steps:
+  - exec: npm test
+    cwd: example-app     # relative to this .terminal.yaml
+    env: { CI: '1' }
+    timeout: 120000      # ms before the command is killed; default 60000
+    idle: 1500           # longest pause kept between two pieces of output
+```
+
+The command is taken literally — no colour markup, since `{…}` is common in shell
+commands. `speed`, `prompt` and `pause` work as they do for `run`.
+
+**Nothing runs unless you allow it:** `castwright build --allow-exec`, `castwright dev
+--allow-exec`, or `castwright({ allowExec: true })` in the Vite plugin. Without it a file
+containing `exec` fails to build, pointing at the step. A demo file is not a script
+anyone should be surprised to find executing.
+
+**Record once, replay forever.** Real output depends on the machine, the time and the
+network, so a demo that runs `exec` on every build is not reproducible.
+`castwright build --allow-exec --record` runs the commands once and rewrites the file:
+each `exec` becomes a `run` with the command and an `output: { raw }` with exactly what it
+printed. From then on the demo builds without running anything, byte for byte the same.
+Comments in the file are kept.
+
+Output ends up in a published demo, so the build warns when it contains something that
+looks like a token or a private key, or your home directory path — check those before
+publishing. It also warns when a command exits non-zero (the output is recorded anyway),
+and when `exec` runs in CI.
+
+`exec` needs node-pty, an optional peer dependency with a native build:
+
+```bash
+pnpm add -D node-pty
+```
+
+<Callout type="caution">
+node-pty 1.1.0 ships its macOS helper without the executable bit. If `exec` fails with
+"posix_spawnp failed", the error names the file; `chmod +x` it once.
+</Callout>
 
 ## Colour and style
 
