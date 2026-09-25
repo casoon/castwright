@@ -4,11 +4,6 @@ description: Three packages, and which of them you actually need.
 order: 1
 ---
 
-<Callout type="note">
-castwright is pre-release. The packages are complete and tested but not published to npm
-yet, so the commands below will not resolve until the first release.
-</Callout>
-
 ## The three packages
 
 | Package | What it is | When you need it |
