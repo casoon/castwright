@@ -1,6 +1,6 @@
 {
   "name": "@casoon/castwright",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Declarative terminal demos for the web — DSL parser, compiler to asciicast v2, CLI, and Vite plugin.",
   "license": "MIT",
   "type": "module",
