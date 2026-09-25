@@ -1,5 +1,23 @@
 # @casoon/astro-castwright
 
+## 0.2.0
+
+### Patch Changes
+
+- e5f6193: Add the `astro-integration`, `withastro`, `ui` and `media` keywords so the package is
+  listed, and categorised, in the Astro integrations library.
+- Updated dependencies [881c875]
+- Updated dependencies [e5f6193]
+- Updated dependencies [1b77b2f]
+- Updated dependencies [ac839f6]
+- Updated dependencies [1b77b2f]
+- Updated dependencies [5971ee8]
+- Updated dependencies [200608e]
+- Updated dependencies [e5f6193]
+- Updated dependencies [ac839f6]
+  - @casoon/castwright@0.2.0
+  - @casoon/castwright-player@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

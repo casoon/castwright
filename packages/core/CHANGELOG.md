@@ -1,5 +1,60 @@
 # @casoon/castwright
 
+## 0.2.0
+
+### Minor Changes
+
+- 881c875: New `exec:` step: runs a real command in a pseudo-terminal the size of the demo and
+  records its output with the timing it had. Options: `cwd`, `env`, `timeout`, `idle`,
+  plus `speed`, `prompt` and `pause` as for `run:`.
+  
+  Nothing runs unless allowed: `castwright build --allow-exec`, `castwright dev
+  --allow-exec`, or `castwright({ allowExec: true })` in the Vite plugin.
+  `castwright build --allow-exec --record` runs the commands once and rewrites the file
+  with `run:` + `output: { raw }`, after which the demo replays the same bytes on every
+  build. The build warns on token-like output, the home directory path, a non-zero exit,
+  and `exec:` in CI.
+  
+  node-pty is an optional peer dependency, imported only when a script uses `exec:`; a
+  plain install pulls no native build.
+- 5971ee8: New `show:` step: a file's contents on screen, syntax-highlighted at build time with
+  Shiki and written into the cast as 24-bit colour — nothing extra reaches the browser.
+  Options: `lines` (a line or a range), `lang` (default: the extension), `theme` (default:
+  the Shiki theme matching the terminal theme), plus `delay` and `pause`.
+  
+  Shiki is an optional peer dependency, loaded only when a script uses `show:`.
+  `resolveShowSteps()` runs between `parse()` and `compile()`, which stays synchronous and
+  free of I/O; the CLI and the Vite plugin call it, and the plugin registers the shown file
+  so editing it recompiles the demo. Errors — a missing file, a range past its end, an
+  unknown language — point at the step's line and column.
+- e5f6193: `castwright build --format svg|gif|mp4`. `svg` is a self-contained animated SVG — real
+  text, no script, the cast's theme, reduced-motion aware — rendered by castwright itself on
+  `@xterm/headless`. `gif` shells out to agg and `mp4` additionally to ffmpeg; a missing
+  tool is reported with an install hint.
+- ac839f6: `--format svg` output is about a fifth of its previous size for longer demos — a
+  53-second demo went from 570 KB to 120 KB — and places non-ASCII glyphs exactly.
+  
+  - Timelines follow terminal lines instead of whole frames: typing changes one line, and
+    scrolling moves one strip of lines rather than redrawing every row.
+  - Each non-ASCII glyph (emoji, CJK, symbols) sits at its own column instead of being
+    stretched along with its neighbours, which shifted them by up to half a cell.
+  - New `--no-chrome` and `--loop-delay <ms>` options for `--format svg`.
+  
+  Checked frame by frame against the previous encoding in Chromium and WebKit, including
+  scrolling, `clear` and the alternate screen, and seen animating in a GitHub README.
+
+### Patch Changes
+
+- 200608e: `--format svg`: escape `"` when writing XML. The cast's title is interpolated into the
+  root element's `aria-label`, so a title containing a double quote closed the attribute
+  early and the document stopped being well-formed XML — which for an SVG means a browser
+  renders nothing at all, with no error at build time.
+- Updated dependencies [e5f6193]
+- Updated dependencies [1b77b2f]
+- Updated dependencies [ac839f6]
+- Updated dependencies [1b77b2f]
+  - @casoon/castwright-player@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

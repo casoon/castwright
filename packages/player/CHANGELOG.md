@@ -1,5 +1,31 @@
 # @casoon/castwright-player
 
+## 0.2.0
+
+### Minor Changes
+
+- 1b77b2f: The player works under a strict Content-Security-Policy with no `'unsafe-inline'` for
+  styles, such as Astro's hash-based `security.csp`. Its CSS is adopted as a constructed
+  stylesheet instead of being injected as a `<style>` element, and the styles xterm.js
+  creates at run time — `<style>` elements for theme and cell size, `style` attributes for
+  24-bit colours — are mirrored or re-applied through the CSSOM. Previously the terminal
+  rendered unstyled and colourless under such a policy.
+
+### Patch Changes
+
+- e5f6193: The window frame hugs the terminal instead of stretching across a wide page. It used to
+  fill the container with the terminal centred inside, which left a wide empty band on
+  either side; it now caps its width at the terminal's own and still shrinks (and scales
+  the terminal) in a narrow container.
+- 1b77b2f: Page styles now override the player's defaults as the theming docs describe. The
+  defaults sat on a plain `castwright-demo` selector in a stylesheet that sorts after the
+  page's own, so `castwright-demo { --castwright-radius: 4px }` lost at equal specificity;
+  they are now wrapped in `:where()`, which gives them none.
+- ac839f6: Seeking or restarting during playback no longer leaves stale output on screen. xterm.js
+  parses written data asynchronously, so resetting it immediately let output still queued
+  from before the reset land on the fresh screen, and a demo could show two runs' worth of
+  text. The reset now goes through the same queue.
+
 ## 0.1.0
 
 ### Minor Changes
