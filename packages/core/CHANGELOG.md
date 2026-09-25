@@ -1,5 +1,13 @@
 # @casoon/castwright
 
+## 0.2.1
+
+### Patch Changes
+
+- 97d8b1f: `--record` no longer folds long lines when it rewrites the file. A recorded line stays
+  exactly as the program printed it, and the rest of the file keeps its layout.
+- @casoon/castwright-player@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes
