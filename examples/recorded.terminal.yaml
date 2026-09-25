@@ -1,0 +1,21 @@
+version: 1
+
+terminal:
+  title: castwright validate
+  cols: 110
+  rows: 9
+  theme: catppuccin-mocha
+
+steps:
+  # Recorded, not written: this was an exec: step, and
+  # `castwright build --allow-exec --record` ran it once and replaced it
+  # with the command and exactly what it printed.
+  - run: castwright validate broken.terminal.yaml
+  - output:
+      raw: |
+        broken.terminal.yaml:5:5: unknown key 'sped' in step 'run' — known keys: run, speed, jitter, pause, prompt
+
+              sped: 30
+              ^
+    delay: 50
+  - wait: 1500

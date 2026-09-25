@@ -26,7 +26,7 @@ export const docHref = (id: string) => url(id === 'index' ? 'docs/' : `docs/${id
  */
 export function buildDocsNav(
   entries: CollectionEntry<'docs'>[],
-  groups: Record<string, string>,
+  groups: Record<string, string>
 ): DocsNavGroup[] {
   const configured = Object.keys(groups);
   const byGroup = new Map<string, CollectionEntry<'docs'>[]>();

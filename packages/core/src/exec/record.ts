@@ -79,5 +79,7 @@ export function recordIntoSource(source: string, recordings: Recording[]): strin
     throw new Error('recordIntoSource: more recordings than exec steps');
 
   steps.items = items as typeof steps.items;
-  return doc.toString();
+  // No line folding: recorded lines stay as the program printed them, and the
+  // rest of the file keeps the layout its author gave it.
+  return doc.toString({ lineWidth: 0 });
 }

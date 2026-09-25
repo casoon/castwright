@@ -3,7 +3,10 @@
 All notable changes to this project are documented here, following
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.2.0] - 2026-09-25
+
+The first release on npm: `@casoon/castwright`, `@casoon/castwright-player` and
+`@casoon/astro-castwright`.
 
 ### Added
 
@@ -26,3 +29,25 @@ All notable changes to this project are documented here, following
 - Vite plugin at `@casoon/castwright/vite`, covering every bundler-based framework, and a
   thin Astro integration with `<TerminalDemo />` on top of it.
 - A self-contained player bundle, so the no-bundler path needs no CDN.
+- `castwright build --format svg`: one self-contained animated SVG — real text, the cast's
+  theme, no script, reduced-motion aware — that plays inside a plain `<img>`, as a GitHub
+  README embeds it. Each terminal line animates only when it changes, so a minute of demo
+  is around 120 kB. `--no-chrome` and `--loop-delay` shape it.
+- `--format gif` and `--format mp4`, through `agg` and `ffmpeg`, with an install hint when
+  either is missing.
+- `show:` puts a file on screen, syntax-highlighted at build time with Shiki (an optional
+  peer dependency) — with `lines`, `lang` and `theme`.
+- `exec:` runs a real command in a pseudo-terminal and records its output with real timing,
+  only with `--allow-exec` / `allowExec: true`. `--record` writes the output back into the
+  file as `run:` + `output: { raw }`, so the demo replays the same bytes on every build.
+  node-pty is an optional peer dependency.
+- The player works under a strict `style-src` (no `'unsafe-inline'`), such as Astro's
+  hash-based CSP. In Firefox, 24-bit colours additionally need
+  `style-src-attr 'unsafe-inline'`.
+
+### Fixed
+
+- Seeking or restarting during playback could leave two runs' worth of output on screen.
+- Page styles now override the player's defaults (`castwright-demo { --castwright-… }`),
+  as the theming guide describes.
+- The window frame is as wide as the terminal instead of stretching across a wide page.

@@ -2,6 +2,8 @@
 import { Callout, CodeBlock, Demo } from '@casoon/pages-theme/components';
 import Base from '@casoon/pages-theme/layouts/Base.astro';
 import { url } from '@casoon/pages-theme/url';
+import recorded from '../../../examples/recorded.terminal.yaml';
+import show from '../../../examples/show.terminal.yaml';
 import colours from '../demos/colours.terminal.yaml';
 import hero from '../demos/hero.terminal.yaml';
 import keys from '../demos/keys.terminal.yaml';
@@ -47,6 +49,24 @@ steps:
   - wait: 250
   - type: "n build"
   - key: enter`,
+  },
+  {
+    id: 'show',
+    demo: show,
+    title: 'A file, highlighted',
+    source: `- run: cat astro.config.ts
+- show: snippets/astro.config.ts`,
+  },
+  {
+    id: 'recorded',
+    demo: recorded,
+    title: 'A real command, recorded',
+    source: `# was: exec: castwright validate broken.terminal.yaml
+# then: castwright build --allow-exec --record
+- run: castwright validate broken.terminal.yaml
+- output:
+    raw: |
+      broken.terminal.yaml:5:5: unknown key 'sped' …`,
   },
   {
     id: 'colours',

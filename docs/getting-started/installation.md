@@ -76,7 +76,5 @@ added 42 packages</pre>
 </castwright-demo>
 ```
 
-<Callout type="caution">
-The `<pre>` is not decoration. It is what a screen reader and a visitor without
-JavaScript get — see [Accessibility](../../guides/accessibility/).
-</Callout>
+> **Caution:** The `<pre>` is not decoration. It is what a screen reader and a visitor without
+> JavaScript get — see [Accessibility](../../guides/accessibility/).

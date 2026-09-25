@@ -55,10 +55,8 @@ The window is as wide as the terminal it holds and never wider than its containe
 narrow container the terminal scales down instead. It sits at the start of the line like
 any block — centre it with `castwright-demo { margin-inline: auto }`.
 
-<Callout type="caution">
-The trade-off that buys: an aggressive global CSS reset can reach into the terminal. If
-yours sets something like `* { line-height: inherit }`, scope it away from `.xterm`.
-</Callout>
+> **Caution:** The trade-off that buys: an aggressive global CSS reset can reach into the terminal. If
+> yours sets something like `* { line-height: inherit }`, scope it away from `.xterm`.
 
 ## Fonts
 

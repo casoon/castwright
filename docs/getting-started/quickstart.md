@@ -45,11 +45,9 @@ import hello from '../demos/hello.terminal.yaml';
 That is the whole integration. The demo is compiled during `astro build`; the YAML parser
 and the compiler never reach the browser.
 
-<Callout type="note">
-`demo` takes an **import**, not a path string. A path would have to be resolved relative
-to the calling page, which the component cannot do — and an import is type-checked, so
-the build fails when the file moves instead of the page silently going blank.
-</Callout>
+> **Note:** `demo` takes an **import**, not a path string. A path would have to be resolved relative
+> to the calling page, which the component cannot do — and an import is type-checked, so
+> the build fails when the file moves instead of the page silently going blank.
 
 ## 3. Iterate
 

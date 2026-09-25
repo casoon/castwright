@@ -4,8 +4,8 @@
     {
       "name": "site",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "castwright-site", "exec", "astro", "preview", "--port", "4321"],
-      "port": 4321
+      "runtimeArgs": ["--filter", "castwright-site", "exec", "astro", "preview", "--port", "4334"],
+      "port": 4334
     }
   ]
 }
