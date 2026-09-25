@@ -3,6 +3,13 @@
 All notable changes to this project are documented here, following
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.1] - 2026-09-25
+
+### Fixed
+
+- `--record` no longer folds long lines when it rewrites the file: a recorded line stays
+  exactly as the program printed it, and the rest of the file keeps its layout.
+
 ## [0.2.0] - 2026-09-25
 
 The first release on npm: `@casoon/castwright`, `@casoon/castwright-player` and
