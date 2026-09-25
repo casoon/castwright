@@ -107,6 +107,7 @@ With no bundler at all, one script tag is the whole setup:
 castwright build demo.terminal.yaml     # → dist/demo.cast
 castwright build demo.terminal.yaml --format svg   # animated SVG for a README, no JS
 castwright build demo.terminal.yaml --format gif   # via agg; mp4 via agg + ffmpeg
+castwright build demo.terminal.yaml --allow-exec --record   # run exec: steps once, keep their output
 castwright validate demos/*.terminal.yaml
 castwright dev demo.terminal.yaml       # watch and reload while authoring
 ```
@@ -136,8 +137,14 @@ The source of those pages is [`docs/`](docs/); the site that renders them is
 
 ## Status
 
-Pre-release, and not yet published to npm. The parser, compiler, CLI, player, Vite plugin,
-Astro integration and the SVG, GIF and MP4 exporters all work.
+0.2.0 is the first release. Everything described here works: the parser, compiler, CLI and
+Vite plugin, the player, the Astro integration, the SVG, GIF and MP4 exporters, and the
+[`show:`](docs/reference/dsl.md#show) and [`exec:`](docs/reference/dsl.md#exec) steps for
+syntax-highlighted files and recorded real commands.
+
+Before 1.0 a minor version may still change the JavaScript API. The DSL is versioned on
+its own — `version: 1` in every file — and removing or repurposing a key is a breaking
+change to it.
 
 [`meta/`](meta/project-state.md) holds the maintainer-facing documentation: current state,
 architecture, decisions and constraints.
