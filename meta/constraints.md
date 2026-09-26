@@ -68,9 +68,6 @@ that the parser and compiler are absent, so this stays true rather than being as
 
 These are **not** verified and must be settled before they harden into constraints:
 
-- Whether an SVG embedded as `<img>` honours `prefers-reduced-motion`. It does inline in
-  Chromium and WebKit; the emulation used in testing does not reach image documents, and
-  a manual check in Firefox 156 did not pick up the macOS setting.
 - Whether xterm.js's DOM renderer (the default, and what the player currently uses) is
   fast enough on low-end mobile. The documentation site renders up to six demos on one
   page, but only the ones scrolled into view are ever instantiated, which is the main
