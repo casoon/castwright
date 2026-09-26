@@ -1,4 +1,4 @@
-// `output: { raw: "..." }` escape processing — see docs/reference/dsl.md ("Raw
+// `output: { raw: "..." }` escape processing — see docs/reference/dsl.mdx ("Raw
 // escapes"). `raw` passes text through untouched except for a small, fixed set
 // of backslash escapes: \e \n \r \t \xNN \uNNNN \\.
 //

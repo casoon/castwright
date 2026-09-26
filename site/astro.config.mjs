@@ -37,6 +37,7 @@ export default defineConfig({
         },
       ],
       demo: 'Live demo',
+      mdxComponents: './src/mdx-components.ts',
       docsGroups: {
         'getting-started': 'Getting started',
         guides: 'Guides',
@@ -46,7 +47,9 @@ export default defineConfig({
   ],
   vite: {
     // The site dogfoods the plugin: its own demos are *.terminal.yaml files
-    // compiled at build time, exactly as a consumer's would be.
-    plugins: [castwright()],
+    // compiled at build time, exactly as a consumer's would be. `allowExec` is
+    // for examples/vhs.tape, whose commands run during the build — every other
+    // demo is written or already recorded.
+    plugins: [castwright({ allowExec: true })],
   },
 });

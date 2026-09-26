@@ -52,7 +52,7 @@ import demo from '../demos/demo.terminal.yaml';
 
 ### A file on screen, highlighted at build time
 
-[`show:`](docs/reference/dsl.md#show) puts a file into the demo with syntax highlighting —
+[`show:`](docs/reference/dsl.mdx#show) puts a file into the demo with syntax highlighting —
 Shiki at build time, 24-bit colour in the cast, nothing extra in the browser.
 
 ```yaml
@@ -67,7 +67,7 @@ steps:
 
 ### A real command, recorded once
 
-[`exec:`](docs/reference/dsl.md#exec) runs a command for real, in a pseudo-terminal the
+[`exec:`](docs/reference/dsl.mdx#exec) runs a command for real, in a pseudo-terminal the
 size of the demo. `--record` then writes what it printed back into the file, so every
 later build replays those exact bytes instead of running anything.
 
@@ -202,7 +202,7 @@ The source of those pages is [`docs/`](docs/); the site that renders them is
 
 0.2.0 is the first release. Everything described here works: the parser, compiler, CLI and
 Vite plugin, the player, the Astro integration, the SVG, GIF and MP4 exporters, and the
-[`show:`](docs/reference/dsl.md#show) and [`exec:`](docs/reference/dsl.md#exec) steps for
+[`show:`](docs/reference/dsl.mdx#show) and [`exec:`](docs/reference/dsl.mdx#exec) steps for
 syntax-highlighted files and recorded real commands.
 
 Before 1.0 a minor version may still change the JavaScript API. The DSL is versioned on
@@ -247,7 +247,7 @@ CHROME=/path/to/chrome pnpm readme:assets  # …and the pipeline diagram, from p
 
 Issues and pull requests are welcome. The DSL is versioned: removing or repurposing a
 key is a breaking change, and every new key is documented in
-[`docs/reference/dsl.md`](docs/reference/dsl.md) and given an example in
+[`docs/reference/dsl.mdx`](docs/reference/dsl.mdx) and given an example in
 [`examples/`](examples/) before it is implemented.
 [`meta/conventions.md`](meta/conventions.md) has the rest of the house rules, and
 [`meta/decisions.md`](meta/decisions.md) explains why the project is shaped the way it

@@ -1,0 +1,14 @@
+version: 1
+terminal:
+  title: my-cli
+  cols: 72
+  rows: 10
+  theme: catppuccin-mocha
+steps:
+  - run: npm install -g my-cli
+  - output: |
+      {green}✓{/} added 1 package in 2s
+  - run: my-cli init
+  - output: |
+      Created {bold}my-cli.config.json{/}
+  - wait: 1500

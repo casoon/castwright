@@ -1,0 +1,30 @@
+# Scenario: an error, and its fix. Recorded like first-demo: real commands,
+# run once with `castwright build --allow-exec --record`.
+version: 1
+terminal:
+  title: ~/my-site
+  cols: 116
+  rows: 20
+  theme: catppuccin-mocha
+steps:
+  - run: castwright validate demos/deploy.terminal.yaml
+  - output:
+      raw: |
+        demos/deploy.terminal.yaml:5:5: unknown key 'sped' in step 'run' — known keys: run, speed, jitter, pause, prompt
+
+              sped: 30
+              ^
+    delay: 16
+  - wait: 2500
+  - run: perl -pi -e 's/sped:/speed:/' demos/deploy.terminal.yaml
+  - wait: 400
+  - run: castwright validate demos/deploy.terminal.yaml && echo "✓ valid"
+  - output:
+      raw: |
+        ✓ valid
+  - wait: 800
+  - run: castwright build demos/deploy.terminal.yaml --format svg
+  - output:
+      raw: |
+        dist/deploy.svg
+  - wait: 2500

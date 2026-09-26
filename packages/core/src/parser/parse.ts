@@ -1,4 +1,4 @@
-// YAML (`*.terminal.yaml`) → Script. docs/reference/dsl.md documents the DSL
+// YAML (`*.terminal.yaml`) → Script. docs/reference/dsl.mdx documents the DSL
 // and types.ts declares the target IR. This is the only place that reads YAML;
 // everything downstream (compiler, renderers) works on `Script`/`Cast` only.
 
@@ -20,7 +20,7 @@ import { parseMarkup } from './markup.js';
 import { unescapeRaw } from './unescape.js';
 
 // Baked-in defaults, taken verbatim from the worked example in
-// docs/reference/dsl.md so the documented example and the implementation
+// docs/reference/dsl.mdx so the documented example and the implementation
 // cannot silently diverge.
 const DEFAULT_SPEED_MS = 45;
 const DEFAULT_PAUSE_MS = 300;
@@ -436,7 +436,7 @@ function parseStep(node: Node, ctx: Ctx, defaults: StepDefaults, cols: number): 
 
   // 'prompt' is the primary "change prompt" step only when run/type are absent.
   // Alongside run/type it is the boolean "suppress prompt for this step" modifier
-  // — see the note under "Modifiers" in docs/reference/dsl.md.
+  // — see the note under "Modifiers" in docs/reference/dsl.mdx.
   if (!primaryEntry) {
     if (promptPair) {
       return [parsePromptStep(promptPair, map, ctx, defaults)];

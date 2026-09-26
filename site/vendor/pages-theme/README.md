@@ -73,6 +73,7 @@ export const collections = { docs: docsCollection() };
 | `changelog` | `../CHANGELOG.md` | Path relative to `site/`, or `false` |
 | `showcase` | `./src/showcase.ts` | Module exporting `examples: ShowcaseExample[]`, or `false` |
 | `demo` | `false` | Header label of a live demo page; the project supplies `src/pages/demo.astro` |
+| `mdxComponents` | – | Module exporting `components` for docs MDX, next to the theme's; see „Docs frontmatter" |
 
 ### Routes
 
@@ -91,7 +92,10 @@ export const collections = { docs: docsCollection() };
 `sidebarLabel`.
 
 MDX pages use theme components **without importing them**. `docs/` sits outside `site/` and
-cannot resolve packages, so the docs route provides all components. Write links between docs
+cannot resolve packages, so the docs route provides all components. A project adds its own
+with `mdxComponents: './src/mdx-components.ts'` — a module exporting
+`components = { Name: Component }` — for anything only the site can build, such as a
+component rendering the project's own output. Its names win over the theme's. Write links between docs
 pages relative (`../quickstart/`), because the base path differs per project.
 
 ## Components

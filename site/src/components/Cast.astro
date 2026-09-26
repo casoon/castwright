@@ -1,0 +1,66 @@
+---
+/**
+ * One demo, playing: the theme's `Demo` stage with the player, the demo's final
+ * frame as the fallback text, and — collapsed — the file it was compiled from.
+ * Used by the demo page and, through `mdxComponents`, by the docs.
+ */
+import { CodeBlock, Demo } from '@casoon/pages-theme/components';
+import { url } from '@casoon/pages-theme/url';
+import { siteDemo } from '../demos';
+
+interface Props {
+  /** File name without `.terminal.yaml` / `.tape`, from examples/ or src/demos/. */
+  name: string;
+  title: string;
+  lead?: string;
+  /** Play it in another theme than the file's. */
+  theme?: string;
+  /** Show the source file, collapsed. Default true. */
+  source?: boolean;
+  /** `id` of the player element. */
+  id?: string;
+  chrome?: 'window' | 'none';
+  controls?: 'visible' | 'hover' | 'none';
+}
+
+const { name, title, lead, theme, source = true, id, chrome, controls } = Astro.props;
+const demo = siteDemo(name, theme);
+const label = `Terminal demo: ${title}`;
+---
+
+<Demo title={title} lead={lead} label={label}>
+  {
+    source && (
+      <details slot="controls" class="cast-source">
+        <summary>
+          Source: <code>{demo.path}</code>
+        </summary>
+        <CodeBlock code={demo.source.trimEnd()} lang={demo.lang} />
+      </details>
+    )
+  }
+  {/* The player comes from this site, never a CDN, and from inside the stage —
+      the only place the theme allows a page's own script. The same module on
+      one page is fetched and run once, however many demos include it. */}
+  <script is:inline type="module" src={url('/castwright-player.js')}></script>
+  <castwright-demo id={id} autoplay loop label={label} chrome={chrome} controls={controls}>
+    <script
+      type="application/json"
+      data-castwright-cast
+      is:inline
+      set:html={JSON.stringify(demo.cast)}
+    />
+    <pre>{demo.finalFrame}</pre>
+  </castwright-demo>
+</Demo>
+
+<style>
+  .cast-source summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .cast-source[open] summary {
+    margin-bottom: 10px;
+  }
+</style>

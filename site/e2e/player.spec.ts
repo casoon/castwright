@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
-const FIRST_DEMO_TEXT = 'pnpm add -D @casoon/castwright';
+const FIRST_DEMO_TEXT = 'cat demos/install.terminal.yaml';
 
 /**
  * Demos are lazy on purpose: one below the fold stays un-mounted until it

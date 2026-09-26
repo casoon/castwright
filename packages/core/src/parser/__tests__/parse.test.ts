@@ -5,7 +5,7 @@ import { parse } from '../parse.js';
 const FILE = 'demo.terminal.yaml';
 
 describe('parse — happy paths', () => {
-  it('parses the full worked example from docs/reference/dsl.md', () => {
+  it('parses the full worked example from docs/reference/dsl.mdx', () => {
     const source = `
 version: 1
 

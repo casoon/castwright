@@ -8,6 +8,11 @@ File extension: `*.terminal.yaml`. Keywords are English and lowercase. Unknown k
 errors, not warnings — a silently ignored typo in a demo file is discovered at review
 time, which is too late.
 
+Every example on this page is playing: each player below was compiled from the file
+under its “Source”, during this site's build.
+
+<Cast name="basic" title="A whole file: examples/basic.terminal.yaml" />
+
 ## Document
 
 ```yaml
@@ -69,6 +74,8 @@ Exactly one primary key per step.
 `key` accepts `enter`, `tab`, `escape`, `backspace`, `up`, `down`, `left`, `right`,
 `ctrl+c`, `ctrl+d` and `ctrl+l`.
 
+<Cast name="keys" title="type, key and wait — with seeded jitter" />
+
 ### Modifiers
 
 | Key | Applies to | Meaning |
@@ -78,6 +85,8 @@ Exactly one primary key per step.
 | `delay` | `output`, `show` | Milliseconds between output *lines*. Default 0 — the whole block at once. |
 | `pause` | any | Milliseconds after this step. |
 | `prompt` | `run`, `type` | `false` suppresses the prompt for that step. |
+
+<Cast name="output-delay" title="delay: output one line at a time" />
 
 ### Ranges
 
@@ -133,6 +142,8 @@ is what keeps it byte-identical from one build to the next.
 For code outside a terminal, use your site's ordinary code blocks — `show` is for a file
 that appears as part of a terminal session.
 
+<Cast name="show" title="show: a file, highlighted at build time" />
+
 ### exec
 
 `exec` runs a real command and puts what it printed into the demo, with the timing it
@@ -163,6 +174,8 @@ network, so a demo that runs `exec` on every build is not reproducible.
 each `exec` becomes a `run` with the command and an `output: { raw }` with exactly what it
 printed. From then on the demo builds without running anything, byte for byte the same.
 Comments in the file are kept.
+
+<Cast name="recorded" title="exec:, after --record" lead="This was an exec: step. --record ran it once and replaced it with the command and exactly what it printed." />
 
 Output ends up in a published demo, so the build warns when it contains something that
 looks like a token or a private key, or your home directory path — check those before
@@ -199,6 +212,8 @@ for true colour, plus `bold`, `dim`, `italic` and `underline`.
 Named colours compile to palette indices, so a demo follows the theme it is played with.
 `#rrggbb` is absolute and ignores it.
 
+<Cast name="colours" title="Markup, compiled" />
+
 ## Raw ANSI
 
 For pasting genuine program output that already contains escape sequences:
@@ -230,3 +245,5 @@ demo.terminal.yaml:4:13: unknown markup tag '{nope}'
   - output: "{nope}broken{/}"
             ^
 ```
+
+<Cast name="error-fix" title="An error, and its fix" lead="Real castwright validate output, recorded: the position, the known keys, a caret under the typo." />
