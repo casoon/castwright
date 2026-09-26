@@ -8,6 +8,7 @@
 
 import { readFileSync } from 'node:fs';
 import { parse } from '../parser/parse.js';
+import { isTapeFile, parseTape } from '../tape/parse.js';
 import { CliUsageError } from './errors.js';
 import { printWarning } from './util.js';
 
@@ -30,9 +31,11 @@ export function runValidate(files: string[]): boolean {
   for (const file of files) {
     try {
       const source = readFileSync(file, 'utf8');
-      parse(source, file, {
-        onWarning: (message, line, column) => printWarning(file, message, line, column),
-      });
+      const onWarning = (message: string, line: number, column: number): void =>
+        printWarning(file, message, line, column);
+      // `exec` only shapes the steps; validating runs nothing either way.
+      if (isTapeFile(file)) parseTape(source, file, { exec: true, onWarning });
+      else parse(source, file, { onWarning });
     } catch (error) {
       ok = false;
       process.stderr.write(`${errorMessage(error)}\n`);

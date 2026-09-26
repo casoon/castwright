@@ -7,6 +7,7 @@ import { recordIntoSource } from '../exec/record.js';
 import { resolveExecSteps } from '../exec/resolve.js';
 import { parse } from '../parser/parse.js';
 import { resolveShowSteps } from '../show/resolve.js';
+import { isTapeFile, parseTape } from '../tape/parse.js';
 import { CliUsageError } from './errors.js';
 import { FORMAT_NAMES, getFormat } from './formats.js';
 import { outputBaseName, printWarning } from './util.js';
@@ -108,7 +109,15 @@ export async function runBuild(options: BuildOptions): Promise<string> {
   const onWarning = (message: string, line: number, column: number): void =>
     printWarning(options.file, message, line, column);
   let source = readFileSync(options.file, 'utf8');
-  let script = parse(source, options.file, { onWarning });
+  const tape = isTapeFile(options.file);
+  if (tape && options.record) {
+    throw new CliUsageError(
+      '--record writes into a .terminal.yaml; a .tape has nowhere to keep the output',
+    );
+  }
+  let script = tape
+    ? parseTape(source, options.file, { exec: options.allowExec ?? false, onWarning })
+    : parse(source, options.file, { onWarning });
   const executed = await resolveExecSteps(script, options.file, {
     ...(options.allowExec ? { allowExec: true } : {}),
     onWarning,

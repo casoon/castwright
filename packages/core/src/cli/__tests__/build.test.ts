@@ -152,6 +152,19 @@ describe('runBuild', () => {
     expect(readFileSync(outPath, 'utf8')).not.toContain('<circle');
   });
 
+  it('builds a VHS tape, and refuses to record into one', async () => {
+    const file = join(dir, 'demo.tape');
+    writeFileSync(file, 'Set Columns 40\nSet Rows 5\nType "hi"\n', 'utf8');
+
+    const outPath = await runBuild({ file, outDir: dir, format: 'cast' });
+    expect(outPath).toBe(join(dir, 'demo.cast'));
+    expect(readFileSync(outPath, 'utf8')).toContain('"width":40');
+
+    await expect(
+      runBuild({ file, outDir: dir, format: 'cast', allowExec: true, record: true }),
+    ).rejects.toThrow(/a \.tape has nowhere to keep the output/);
+  });
+
   it('propagates a positioned parse error for an invalid script', async () => {
     const file = join(dir, 'bad.terminal.yaml');
     writeFileSync(

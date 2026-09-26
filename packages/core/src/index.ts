@@ -20,6 +20,8 @@ export type { ParseOptions } from './parser/parse.js';
 export { parse } from './parser/parse.js';
 export type { ResolvedScript } from './show/resolve.js';
 export { resolveShowSteps } from './show/resolve.js';
+export type { TapeOptions } from './tape/parse.js';
+export { isTapeFile, parseTape } from './tape/parse.js';
 export type { ThemeName } from './themes/index.js';
 export { isThemeName, resolveTheme, THEME_NAMES } from './themes/index.js';
 export type {

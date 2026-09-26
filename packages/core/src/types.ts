@@ -117,6 +117,11 @@ export interface ExecStep {
   /** As written — relative to the `.terminal.yaml` it appears in. */
   cwd?: string;
   env?: Record<string, string>;
+  /**
+   * Commands run silently in the same shell before `command` — a tape's hidden
+   * setup (`Hide … Show`). Not part of the YAML DSL.
+   */
+  setup?: string;
   /** ms before the command is killed and the build fails. */
   timeout: number;
   /** Longest pause kept between two pieces of output, in ms; longer ones are shortened. */

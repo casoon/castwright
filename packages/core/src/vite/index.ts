@@ -1,4 +1,4 @@
-// @casoon/castwright/vite — compile *.terminal.yaml at build time.
+// @casoon/castwright/vite — compile *.terminal.yaml (and VHS *.tape) at build time.
 //
 // This, not the Astro integration, is the piece that makes castwright
 // universal: one plain Vite plugin covers Astro, SvelteKit, Nuxt, Remix,
@@ -15,6 +15,7 @@ import { resolveExecSteps } from '../exec/resolve.js';
 import { CastwrightParseError } from '../parser/errors.js';
 import { parse } from '../parser/parse.js';
 import { resolveShowSteps } from '../show/resolve.js';
+import { isTapeFile, parseTape } from '../tape/parse.js';
 
 /** The shape of a Vite plugin, declared locally to avoid importing vite. */
 interface VitePluginLike {
@@ -29,7 +30,7 @@ interface VitePluginLike {
 }
 
 export interface CastwrightPluginOptions {
-  /** Which files to compile. Default: anything ending in `.terminal.yaml`. */
+  /** Which files to compile. Default: anything ending in `.terminal.yaml` or `.tape`. */
   include?: (id: string) => boolean;
   /**
    * Also emit the final terminal contents as plain text, for the accessibility
@@ -53,7 +54,7 @@ const PASSTHROUGH_QUERIES = ['raw', 'url', 'inline', 'worker'];
 
 const DEFAULT_INCLUDE = (id: string): boolean => {
   const [path, query] = id.split('?');
-  if (!path?.endsWith('.terminal.yaml')) return false;
+  if (!path?.endsWith('.terminal.yaml') && !path?.endsWith('.tape')) return false;
   if (query === undefined) return true;
   const params = new URLSearchParams(query);
   return !PASSTHROUGH_QUERIES.some((name) => params.has(name));
@@ -94,10 +95,12 @@ export function castwright(options: CastwrightPluginOptions = {}): VitePluginLik
 
       let cast: import('../types.js').Cast;
       try {
-        const executed = await resolveExecSteps(parse(source, file), file, {
-          allowExec,
-          onWarning: (message, line, column) => this.warn(`${file}:${line}:${column}: ${message}`),
-        });
+        const onWarning = (message: string, line: number, column: number): void =>
+          this.warn(`${file}:${line}:${column}: ${message}`);
+        const parsed = isTapeFile(file)
+          ? parseTape(source, file, { exec: allowExec, onWarning })
+          : parse(source, file);
+        const executed = await resolveExecSteps(parsed, file, { allowExec, onWarning });
         const { script, files } = await resolveShowSteps(executed.script, file);
         // A file shown with `show:` is part of this module: editing it must
         // recompile the demo, in dev (HMR) and in watch builds alike.

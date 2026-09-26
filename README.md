@@ -108,7 +108,7 @@ castwright's output. [`meta/architecture.md`](meta/architecture.md) has the deta
 |---|---|---|---|
 | [asciinema](https://asciinema.org/) | Record a real session | Real VT | Mature player |
 | [VHS](https://github.com/charmbracelet/vhs) | Declarative `.tape` | Real VT, via headless Chrome | GIF only |
-| **castwright** | Declarative YAML, compiled | Real VT (xterm.js) | Framework-agnostic player, animated SVG, GIF/MP4 |
+| **castwright** | Declarative YAML (or a VHS `.tape`), compiled | Real VT (xterm.js) | Framework-agnostic player, animated SVG, GIF/MP4 |
 
 Authored rather than recorded, deterministic (same input, same bytes — a compiled cast is
 a text file you can commit and read in a diff), browser-free at build time, and web-native
@@ -170,6 +170,7 @@ castwright build demo.terminal.yaml     # → dist/demo.cast
 castwright build demo.terminal.yaml --format svg   # animated SVG for a README, no JS
 castwright build demo.terminal.yaml --format gif   # via agg; mp4 via agg + ffmpeg
 castwright build demo.terminal.yaml --allow-exec --record   # run exec: steps once, keep their output
+castwright build demo.tape --allow-exec  # a VHS tape, its commands run for real
 castwright validate demos/*.terminal.yaml
 castwright dev demo.terminal.yaml       # watch and reload while authoring
 ```

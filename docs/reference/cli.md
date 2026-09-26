@@ -12,8 +12,8 @@ Errors go to stderr, results to stdout, so the commands compose.
 castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--allow-exec [--record]]
 ```
 
-Compiles a `*.terminal.yaml` to `<dir>/<name>.<format>` and prints the path. `-o` defaults
-to `dist`, `--format` to `cast`.
+Compiles a `*.terminal.yaml` — or a [VHS `.tape`](../tape/) — to `<dir>/<name>.<format>`
+and prints the path. `-o` defaults to `dist`, `--format` to `cast`.
 
 ```
 $ castwright build demo.terminal.yaml

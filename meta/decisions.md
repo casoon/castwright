@@ -214,3 +214,18 @@ been unmaintained since 2022 with deprecated dependencies (including an `xmldom`
 known CVE). `agg` passed: it reads the header theme and renders bold, italic, dim and
 underline correctly, so rasterising ourselves would only duplicate it. Both tools stay
 external and are never bundled.
+
+## VHS tapes are a second front end, and their commands run through `exec:`
+
+`parseTape()` in core turns a `.tape` into the same Script IR as `parse()`; the CLI and
+the Vite plugin pick the parser by file extension. With `allowExec`, a typed line ending
+in `Enter` becomes an `exec:` step, and lines typed between `Hide` and `Show` become its
+silent `setup`.
+
+*Reason:* a sample of 40 public tapes showed that over 90 % get their content from real
+command output, so a tape parser without execution shows typing and nothing else. Once
+`exec:` existed, translating a tape the way VHS means it cost a parser and one IR field.
+It stays in core rather than a `-tape` package: it has no dependencies, and a separate
+package would add a release and an install step for a few hundred lines. The promise is
+a documented subset (docs/reference/tape.md), not compatibility — TUIs driven by keys
+cannot work, since an `exec:` command gets no input.
