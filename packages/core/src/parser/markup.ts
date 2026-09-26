@@ -1,5 +1,5 @@
 // Inline markup parser — `{green}✓{/}`, `{bold}…{//}`, `{{` for a literal brace.
-// See "Colour and style" in docs/reference/dsl.md. Produces a `Styled` span
+// See "Colour and style" in docs/reference/dsl.mdx. Produces a `Styled` span
 // list; downstream code (the compiler) never re-parses `{tag}` syntax.
 
 import type { Color, Span, Styled } from '../types.js';

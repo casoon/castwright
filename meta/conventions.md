@@ -53,7 +53,7 @@ the parser.
 ## DSL evolution
 
 - DSL keywords are English and lowercase.
-- Every new DSL key is documented in `docs/reference/dsl.md` **before** it is
+- Every new DSL key is documented in `docs/reference/dsl.mdx` **before** it is
   implemented, and gets an example in `examples/`.
 - The DSL is versioned via the top-level `version:` field. Removing or repurposing a key
   is a breaking change and requires a major release.

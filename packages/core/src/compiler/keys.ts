@@ -1,5 +1,5 @@
 // KeyName → the bytes a terminal receives for that key. The key list is in
-// docs/reference/dsl.md ("Steps").
+// docs/reference/dsl.mdx ("Steps").
 //
 // `enter` is `\r\n`, not a bare `\r`: `run` lowers to typed text plus a
 // trailing `\r\n` from `key: enter`.

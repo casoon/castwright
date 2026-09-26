@@ -2,93 +2,23 @@
 import { Callout, CodeBlock, Demo } from '@casoon/pages-theme/components';
 import Base from '@casoon/pages-theme/layouts/Base.astro';
 import { url } from '@casoon/pages-theme/url';
-import recorded from '../../../examples/recorded.terminal.yaml';
-import show from '../../../examples/show.terminal.yaml';
-import colours from '../demos/colours.terminal.yaml';
-import hero from '../demos/hero.terminal.yaml';
-import keys from '../demos/keys.terminal.yaml';
-import outputDelay from '../demos/output-delay.terminal.yaml';
+import Cast from '../components/Cast.astro';
 
-// Compiled by castwright's own Vite plugin during this build: `cast` is the
-// asciicast, `finalFrame` its end state as plain text. The player receives both
-// — the cast to play, the text as the accessibility fallback a visitor gets
-// before the script runs and if it never does.
-const demos = [
-  {
-    id: 'hero',
-    demo: hero,
-    title: 'Autoplay, looping',
-    source: `steps:
-  - run: pnpm add -D @casoon/castwright
-  - output: |
-      {green}✓{/} added 3 packages
-  - wait: 500
-  - run: castwright build demo.terminal.yaml`,
-  },
-  {
-    id: 'delay',
-    demo: outputDelay,
-    title: 'Output, line by line',
-    source: `- run: npm test
-- output: |
-    {green}✓{/} parser
-    {green}✓{/} compiler
-    {green}✓{/} player
-    {dim}3 passed{/}
-  delay: 400`,
-  },
-  {
-    id: 'keys',
-    demo: keys,
-    title: 'Keys and seeded jitter',
-    source: `seed: 7
-steps:
-  - type: npm ru
-    jitter: 0.4
-  - key: tab
-  - wait: 250
-  - type: "n build"
-  - key: enter`,
-  },
-  {
-    id: 'show',
-    demo: show,
-    title: 'A file, highlighted',
-    source: `- run: cat astro.config.ts
-- show: snippets/astro.config.ts`,
-  },
-  {
-    id: 'recorded',
-    demo: recorded,
-    title: 'A real command, recorded',
-    source: `# was: exec: castwright validate broken.terminal.yaml
-# then: castwright build --allow-exec --record
-- run: castwright validate broken.terminal.yaml
-- output:
-    raw: |
-      broken.terminal.yaml:5:5: unknown key 'sped' …`,
-  },
-  {
-    id: 'colours',
-    demo: colours,
-    title: 'Colour and style',
-    source: `- output: |
-    {red}red{/} {green}green{/} {yellow}yellow{/}
-    {bg-blue} on blue {/} {#f38ba8}#f38ba8{/}
-    {bold}bold{/} {dim}dim{/} {underline}underline{/}`,
-  },
-];
+// Every player below is compiled during this build by castwright's own Vite
+// plugin (src/demos.ts); the file each one came from is one click away.
+const themes = ['default', 'dracula', 'solarized-dark', 'github-light'];
 ---
 
 <Base
   title="Live demo"
-  description="castwright running in the page: the same casts the test suite compiles, played by the real player."
+  description="castwright running in the page: realistic scenarios and every feature, compiled during this build and played by the real player."
 >
   <div class="page">
     <h1>Live demo</h1>
     <p class="lead">
-    Everything below is the player itself, running here. The casts were compiled during
-    this build by castwright's own Vite plugin, from the YAML shown next to each one.
+    Everything below is the player itself, running here. Each demo was compiled during this
+    build from the file under “Source” — the commands in the scenarios really ran, once,
+    and castwright recorded what they printed.
     </p>
 
     <Callout type="tip">
@@ -97,34 +27,64 @@ steps:
     controls still there for anyone who does want to watch.
     </Callout>
 
-    {
-    demos.map(({ id, demo, title, source }) => (
-      <Demo
-        title={title}
-        lead="Compiled at build time, played live."
-        label={`Terminal demo: ${title}`}
-      >
-        <CodeBlock slot="controls" code={source} lang="yaml" />
-        {
-          /* The player, loaded from this site rather than a CDN, and from inside
-             the stage because that is the only place the theme permits a page's
-             own script. One registration covers every demo on the page. */
-          id === 'hero' && (
-            <script is:inline type="module" src={url('/castwright-player.js')} />
-          )
-        }
-        <castwright-demo id={`demo-${id}`} autoplay loop label={`Terminal demo: ${title}`}>
-          <script
-            type="application/json"
-            data-castwright-cast
-            is:inline
-            set:html={JSON.stringify(demo.cast)}
-          />
-          <pre>{demo.finalFrame}</pre>
-        </castwright-demo>
-      </Demo>
-    ))
-    }
+    <h2>Scenarios</h2>
+
+    <Cast
+      name="first-demo"
+      id="demo-first"
+      title="A first demo, end to end"
+      lead="Write a demo file, validate it, build it to an SVG and to a cast. Real castwright output, recorded with exec: and --record."
+    />
+    <Cast
+      name="error-fix"
+      id="demo-error"
+      title="An error, and its fix"
+      lead="A typo in a demo file: validate points at the line and column, a one-line fix, and the build goes through."
+    />
+    <Cast
+      name="vhs"
+      id="demo-vhs"
+      title="A VHS tape, built as is"
+      lead="examples/vhs.tape in unchanged VHS syntax. Its commands ran during this site's build; hidden setup included."
+    />
+
+    <h2>Features</h2>
+
+    <div class="gallery">
+      <Cast name="show" title="A file, highlighted" lead="show: reads a file and highlights it with Shiki, at build time." />
+      <Cast name="recorded" title="A real command, recorded" lead="exec: ran castwright once; --record kept exactly what it printed." />
+      <Cast name="keys" title="Keys and seeded jitter" lead="Tab completion, human-looking typing — the same bytes on every build." />
+      <Cast name="output-delay" title="Output, line by line" lead="delay: prints a block one line at a time." />
+      <Cast name="colours" id="demo-colours" title="Colour and style" lead="Named colours follow the theme; #rrggbb is exact." />
+
+    </div>
+
+    <Demo title="The same demo as an SVG" lead="castwright build --format svg — one file, no script, plays inside a plain <img>, on GitHub too.">
+      <CodeBlock
+        slot="controls"
+        code={'castwright build error-fix.terminal.yaml --format svg\n\n<img src="error-fix.svg" alt="…">'}
+        lang="shellscript"
+      />
+      <img
+        class="svg-demo"
+        src={url('/svg/error-fix.svg')}
+        alt="castwright validate reports an unknown key 'sped' at line 5, column 5; after a one-line fix validation passes and the build writes dist/deploy.svg."
+      />
+    </Demo>
+
+    <h2>One cast, four themes</h2>
+    <p>
+    A cast stores colours as palette indices and carries its palette in the header, so the
+    same compiled demo plays in any of the seven bundled themes.
+    </p>
+
+    <div class="gallery themes">
+      {
+        themes.map((theme) => (
+          <Cast name="hero" theme={theme} title={theme} source={false} />
+        ))
+      }
+    </div>
 
     <h2>Without the chrome</h2>
     <p>
@@ -133,29 +93,15 @@ steps:
     way to stop it.
     </p>
 
-    <Demo title="Bare, looping" label="Bare terminal demo">
-    <CodeBlock
-      slot="controls"
-      code={'<TerminalDemo demo={demo} autoplay loop chrome="none" controls="hover" />'}
-      lang="astro"
-    />
-    <castwright-demo
+    <Cast
+      name="hero"
       id="demo-bare"
-      autoplay
-      loop
+      title="Bare, looping"
       chrome="none"
       controls="hover"
-      label="Bare terminal demo"
-    >
-      <script
-        type="application/json"
-        data-castwright-cast
-        is:inline
-        set:html={JSON.stringify(hero.cast)}
-      />
-      <pre>{hero.finalFrame}</pre>
-    </castwright-demo>
-    </Demo>
+      source={false}
+      lead={'<TerminalDemo demo={demo} autoplay loop chrome="none" controls="hover" />'}
+    />
   </div>
 </Base>
 
@@ -184,5 +130,16 @@ steps:
   .page > p {
     max-width: 68ch;
     margin: -16px 0 0;
+  }
+  .gallery {
+    display: grid;
+    gap: 28px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+    align-items: start;
+  }
+  .svg-demo {
+    display: block;
+    max-width: 100%;
+    height: auto;
   }
 </style>

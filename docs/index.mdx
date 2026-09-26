@@ -12,6 +12,12 @@ pieces, each doing one job:
 - a **player** built on [xterm.js](https://xtermjs.org/), so what renders is an actual
   terminal emulator rather than coloured spans pretending to be one.
 
+<Cast
+  name="first-demo"
+  title="A first demo, end to end"
+  lead="Written in YAML, validated, built to an SVG and a cast — this terminal is the compiled result, playing. The castwright output in it is real, recorded once with exec: and --record."
+/>
+
 It is explicitly *not* a terminal recorder and *not* a terminal emulator. ANSI and VT
 handling is xterm.js's job; the interchange format already exists. castwright's own
 substance is the authoring language, the compiler, the player and the exporters.
@@ -21,7 +27,10 @@ substance is the authoring language, the compiler, the player and the exporters.
 - [Installation](./getting-started/installation/) — the three packages and which you need.
 - [Quickstart](./getting-started/quickstart/) — a demo on a page in about five minutes.
 - [Writing demos](./guides/writing-demos/) — how the DSL fits together.
-- [DSL reference](./reference/dsl/) — every key, with examples.
+- [Recipes](./guides/recipes/) — a landing-page snippet, a README SVG, an error message,
+  real commands, a VHS tape.
+- [DSL reference](./reference/dsl/) — every key, each with a live example.
+- [VHS tapes](./reference/tape/) — build an existing `.tape` as is.
 
 ## How it compares
 
@@ -29,7 +38,7 @@ substance is the authoring language, the compiler, the player and the exporters.
 | --- | --- | --- | --- |
 | [asciinema](https://asciinema.org/) | Record a real session | Real VT | Mature player |
 | [VHS](https://github.com/charmbracelet/vhs) | Declarative `.tape` | Real VT, via headless Chrome | GIF only |
-| **castwright** | Declarative YAML, compiled | Real VT (xterm.js) | Framework-agnostic player |
+| **castwright** | Declarative YAML (or a VHS `.tape`), compiled | Real VT (xterm.js) | Framework-agnostic player, animated SVG, GIF/MP4 |
 
 The combination castwright is after: authored rather than recorded, deterministic (same
 input, same bytes), browser-free at build time, and web-native at output.

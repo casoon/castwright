@@ -7,8 +7,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "type-check": "astro check",
-    "prebuild": "node scripts/copy-player.mjs",
-    "predev": "node scripts/copy-player.mjs",
+    "prebuild": "node scripts/copy-player.mjs && node scripts/build-svgs.mjs",
+    "predev": "node scripts/copy-player.mjs && node scripts/build-svgs.mjs",
     "check": "node ~/.claude/skills/casoon-pages/scripts/check-site.cjs http://localhost:4321/castwright/",
     "test:e2e": "playwright test"
   },

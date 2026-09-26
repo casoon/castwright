@@ -1,0 +1,106 @@
+---
+title: Recipes
+description: The demos people actually need — a landing-page snippet, a README SVG, an error message, real commands, an existing VHS tape.
+order: 2
+---
+
+Each recipe is a job someone has, the smallest file that does it, and the result playing.
+Every player on this page was compiled from the file under its “Source”.
+
+## An install snippet for a landing page
+
+A hero wants the terminal and nothing else: no title bar, no control bar in the way. The
+controls stay reachable — hover the demo or tab to it — because a loop that never stops
+needs a way to stop it.
+
+```astro
+<TerminalDemo demo={install} autoplay loop chrome="none" controls="hover" />
+```
+
+<Cast name="hero" title="chrome none, controls on hover" chrome="none" controls="hover" />
+
+Keep it short: two or three commands, a result that reads as success, and a `wait` at the
+end so the final frame holds before the loop starts over.
+
+## An animated demo in a README
+
+GitHub runs no script in a README, and a GIF of a terminal is large and blurry. An SVG is
+neither: text stays text, and the animation is CSS.
+
+```bash
+castwright build demo.terminal.yaml --format svg -o .github/readme
+```
+
+```markdown
+<img src=".github/readme/demo.svg" alt="What the demo shows, in one sentence." width="720">
+```
+
+The SVG honours reduced motion — a visitor who has it switched on sees the finished
+screen, standing still. `--no-chrome` drops the title bar; `--loop-delay <ms>` sets how
+long the last frame holds. For places that take no SVG (chat, social cards),
+`--format gif` renders the same cast through [agg](https://github.com/asciinema/agg).
+
+## An error message, and what fixes it
+
+Documentation of a CLI is mostly documentation of what goes wrong. Show the real message
+rather than a paraphrase of it: run the failing command once with `exec:` and record it.
+
+<Cast name="error-fix" title="A typo, reported and fixed" />
+
+## Real command output, without running it on every build
+
+Writing out a long, coloured output by hand is error-prone. `exec:` runs the command in a
+pseudo-terminal and records what it printed, with its timing:
+
+```yaml
+steps:
+  - exec: castwright validate broken.terminal.yaml
+```
+
+```bash
+castwright build demo.terminal.yaml --allow-exec --record   # once
+castwright build demo.terminal.yaml                         # every build after
+```
+
+`--record` rewrites the file: the `exec:` step becomes the command and exactly what it
+printed. From then on nothing runs, and every build produces the same bytes. Commands
+never run without `--allow-exec`, and the build warns when the output contains something
+that looks like a token or your home directory.
+
+<Cast name="recorded" title="An exec: step, after --record" />
+
+## A config file, shown in the terminal
+
+`show:` puts a file on screen, highlighted with Shiki at build time — the output of a
+`cat` without copying the file into the demo. Edit the file and the demo follows.
+
+```yaml
+steps:
+  - run: cat astro.config.ts
+  - show: snippets/astro.config.ts
+```
+
+<Cast name="show" title="show: with Shiki" />
+
+## An existing VHS tape
+
+If you already have [VHS](https://github.com/charmbracelet/vhs) tapes, build them as they
+are. With `--allow-exec` their commands run and their output is recorded, as VHS would do
+it — without a headless browser.
+
+```bash
+castwright build demo.tape --format svg --allow-exec
+```
+
+<Cast name="vhs" title="examples/vhs.tape, as is" lead="The commands in this tape ran during this site's build; the hidden cd included." />
+
+[VHS tapes](../../reference/tape/) lists what is translated and what is not.
+
+## The same demo in another theme
+
+A cast stores colours as palette indices and carries its palette in the header, so a
+theme is one line — `terminal.theme` — and a light-mode page gets a light terminal.
+
+<Cast name="hero" theme="github-light" title="theme: github-light" source={false} />
+
+The seven bundled themes are listed in [Theming](../../reference/theming/).

@@ -1,0 +1,33 @@
+# Scenario: a first demo, end to end. Recorded, not written: the castwright
+# commands were exec: steps, run once in a scratch project with
+# `castwright build --allow-exec --record`, which replaced each with the command
+# and exactly what it printed. The shown file is files/install.terminal.yaml.
+version: 1
+terminal:
+  title: ~/my-site
+  cols: 92
+  rows: 24
+  theme: catppuccin-mocha
+steps:
+  - run: cat demos/install.terminal.yaml
+  - show: files/install.terminal.yaml
+  - wait: 2000
+  - run: castwright validate demos/install.terminal.yaml
+  - wait: 600
+  - run: castwright build demos/install.terminal.yaml --format svg
+  - output:
+      raw: |
+        dist/install.svg
+  - wait: 600
+  - run: castwright build demos/install.terminal.yaml
+  - output:
+      raw: |
+        dist/install.cast
+  - wait: 600
+  - run: du -h dist/*
+  - output:
+      raw: |
+        4.0K	dist/install.cast
+        8.0K	dist/install.svg
+    delay: 4
+  - wait: 2500

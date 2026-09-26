@@ -198,4 +198,9 @@ terminal logic; both halves work in Astro without it.
   axe over every page in light and dark before a release. Its showcase and hero terminal
   are produced by castwright's own compiler at build time, from the same `examples/`
   fixtures the unit tests use — so a change in compiler output shows up on the page.
+  Every player on the site goes through one registry (`site/src/demos.ts`) and one
+  component (`Cast.astro`); the docs' MDX reaches it through the theme's
+  `mdxComponents` option, since `docs/` cannot import. `examples/vhs.tape` runs its
+  commands during the site build (`allowExec`); the SVGs shown as `<img>` are built by
+  the CLI in `prebuild`.
 
