@@ -39,8 +39,6 @@ See [architecture.md](architecture.md) for how the pieces fit together.
 - **Publishing.** Nothing is on npm beyond the `castwright` name reservation. The
   versions are set to `0.1.0` and the changelogs written, so the remaining step is a
   maintainer running `pnpm release` locally — see "Releasing" in conventions.md.
-- **VHS `.tape` input.** Deferred: most public tapes need real execution to show
-  anything, so it is only worth revisiting on top of `exec:`.
 
 ## Stack
 

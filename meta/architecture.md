@@ -110,6 +110,10 @@ flowchart LR
   `show/resolve.ts` highlights `show:` files with Shiki into `output` steps.
   `exec/record.ts` writes a run back into the YAML document for `--record`. The CLI and
   the Vite plugin call both; `compile()` refuses an unresolved step.
+- `tape/parse.ts` is a second front end: it reads a VHS `.tape` into the same Script IR.
+  With `exec` set, a typed line ending in `Enter` becomes an `exec:` step, and lines typed
+  while hidden become its silent `setup`. The CLI and the Vite plugin choose the parser by
+  file extension (`isTapeFile()`); nothing after parsing knows a tape was the source.
 - `exporters/svg.ts` replays the cast into `@xterm/headless`, snapshots the screen per
   frame (changes under 30 ms merged) and defines each distinct row once. Timelines follow
   buffer lines, not frames: each line of the normal buffer sits at its index on one tall
@@ -195,7 +199,3 @@ terminal logic; both halves work in Astro without it.
   are produced by castwright's own compiler at build time, from the same `examples/`
   fixtures the unit tests use — so a change in compiler output shows up on the page.
 
-## Not yet part of this architecture
-
-VHS `.tape` input — deferred: most public tapes show output that only real execution
-produces (plan item 09).

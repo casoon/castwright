@@ -113,7 +113,12 @@ function run(
   return new Promise((done, fail) => {
     let term: ReturnType<Pty['spawn']>;
     try {
-      term = pty.spawn('/bin/sh', ['-c', step.command], {
+      // Setup output is discarded; a `cd` or `export` in it still applies.
+      const script =
+        step.setup === undefined
+          ? step.command
+          : `{\n${step.setup}\n} >/dev/null 2>&1\n${step.command}`;
+      term = pty.spawn('/bin/sh', ['-c', script], {
         name: 'xterm-256color',
         cols,
         rows,
