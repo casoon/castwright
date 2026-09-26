@@ -10,8 +10,8 @@ All notable changes to this project are documented here, following
 - VHS `.tape` files as input: `castwright build`, `validate` and `dev` and the Vite plugin
   take them next to `*.terminal.yaml`. With `--allow-exec` each typed command runs as an
   `exec:` step and its output is recorded; commands typed between `Hide` and `Show` run
-  silently before each visible one. A documented subset — see the
-  [VHS tapes reference](docs/reference/tape.md).
+  silently before each visible one. A documented subset, listed in the VHS tapes
+  reference.
 
 ## [0.2.1] - 2026-09-25
 
