@@ -3,6 +3,16 @@
 All notable changes to this project are documented here, following
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-09-26
+
+### Added
+
+- VHS `.tape` files as input: `castwright build`, `validate` and `dev` and the Vite plugin
+  take them next to `*.terminal.yaml`. With `--allow-exec` each typed command runs as an
+  `exec:` step and its output is recorded; commands typed between `Hide` and `Show` run
+  silently before each visible one. A documented subset — see the
+  [VHS tapes reference](docs/reference/tape.md).
+
 ## [0.2.1] - 2026-09-25
 
 ### Fixed
