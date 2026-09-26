@@ -17,9 +17,11 @@ the exporters.
 
 ## Current state of this repository
 
-**V1 is functionally complete and unpublished.** The whole path works end to end: a
-`*.terminal.yaml` compiles to asciicast, and `<castwright-demo>` plays it as a real
-terminal in a browser. Nothing is on npm yet.
+**Released: 0.3.0 on npm** (all three packages, fixed versioning). The whole path works
+end to end: a `*.terminal.yaml` — or a VHS `.tape` — compiles to asciicast, and
+`<castwright-demo>` plays it as a real terminal in a browser, or the CLI exports it as
+SVG, GIF or MP4. On top of V1: the `show:` and `exec:` steps and `.tape` input. The docs
+are live at https://casoon.github.io/castwright/.
 
 | Path | Contents |
 |---|---|
@@ -34,12 +36,6 @@ terminal in a browser. Nothing is on npm yet.
 
 See [architecture.md](architecture.md) for how the pieces fit together.
 
-### What is deliberately not done
-
-- **Publishing.** Nothing is on npm beyond the `castwright` name reservation. The
-  versions are set to `0.1.0` and the changelogs written, so the remaining step is a
-  maintainer running `pnpm release` locally — see "Releasing" in conventions.md.
-
 ## Stack
 
 All of this is in place (see [decisions.md](decisions.md) for the reasoning):
@@ -48,7 +44,8 @@ All of this is in place (see [decisions.md](decisions.md) for the reasoning):
 - **Repository layout:** pnpm workspaces monorepo, no Turborepo/Nx for now
 - **Terminal engine:** `@xterm/xterm` in the browser, `@xterm/headless` for exporters
 - **Interchange format:** asciicast v2
-- **npm scope:** `@casoon/castwright*` — reserved; nothing published yet
+- **npm scope:** `@casoon/castwright*` — published since 0.2.0; the unscoped `castwright`
+  placeholder is deprecated in favour of `@casoon/castwright`
 - **License:** MIT
 - **Tooling:** Biome (lint + format), Vitest (`test.projects` across packages),
   TypeScript project references, Changesets with fixed versioning across the three
