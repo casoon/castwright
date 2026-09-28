@@ -1,5 +1,20 @@
 # @casoon/castwright
 
+## 0.4.0
+
+### Minor Changes
+
+- 78b351d: `castwright build demo.tape --allow-exec --record` writes the recorded tape to a new
+  `demo.terminal.yaml` next to it: each command as `run:` with exactly what it printed,
+  hidden setup left out. The YAML then builds without running anything. An existing file
+  is never overwritten.
+  
+  `--record` no longer writes an empty `output:` step for a command that printed nothing.
+
+### Patch Changes
+
+- @casoon/castwright-player@0.4.0
+
 ## 0.3.1
 
 ### Patch Changes
