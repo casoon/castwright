@@ -1,5 +1,13 @@
 # @casoon/castwright
 
+## 0.3.1
+
+### Patch Changes
+
+- 69bbcd3: The `vite` peer range includes `^8.0.0`. Astro 7 ships Vite 8, so installing
+  `@casoon/astro-castwright` in an Astro 7 project warned about an unmet peer.
+- @casoon/castwright-player@0.3.1
+
 ## 0.3.0
 
 ### Minor Changes
