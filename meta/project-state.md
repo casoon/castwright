@@ -17,7 +17,7 @@ the exporters.
 
 ## Current state of this repository
 
-**Released: 0.3.0 on npm** (all three packages, fixed versioning). The whole path works
+**Released: 0.3.1 on npm** (all three packages, fixed versioning). The whole path works
 end to end: a `*.terminal.yaml` — or a VHS `.tape` — compiles to asciicast, and
 `<castwright-demo>` plays it as a real terminal in a browser, or the CLI exports it as
 SVG, GIF or MP4. On top of V1: the `show:` and `exec:` steps and `.tape` input. The docs

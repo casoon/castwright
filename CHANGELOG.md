@@ -3,6 +3,13 @@
 All notable changes to this project are documented here, following
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.1] - 2026-09-28
+
+### Fixed
+
+- `@casoon/castwright` accepts Vite 8 as a peer. Astro 7 ships Vite 8, so installing
+  `@casoon/astro-castwright` in an Astro 7 project warned about an unmet `vite` peer.
+
 ## [0.3.0] - 2026-09-26
 
 ### Added
