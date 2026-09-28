@@ -94,6 +94,9 @@ castwright build demo.tape --format svg --allow-exec
 
 <Cast name="vhs" title="examples/vhs.tape, as is" lead="The commands in this tape ran during this site's build; the hidden cd included." />
 
+To stop running the commands on every build, record the tape once into an ordinary demo
+file — `castwright build demo.tape --allow-exec --record` writes `demo.terminal.yaml`.
+
 [VHS tapes](../../reference/tape/) lists what is translated and what is not.
 
 ## The same demo in another theme

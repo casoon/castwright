@@ -2,6 +2,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { finalFrameText } from '../../compiler/final-frame.js';
 import { parseBuildArgs, runBuild } from '../build.js';
 import { CliUsageError } from '../errors.js';
 
@@ -152,17 +153,85 @@ describe('runBuild', () => {
     expect(readFileSync(outPath, 'utf8')).not.toContain('<circle');
   });
 
-  it('builds a VHS tape, and refuses to record into one', async () => {
+  it('builds a VHS tape', async () => {
     const file = join(dir, 'demo.tape');
     writeFileSync(file, 'Set Columns 40\nSet Rows 5\nType "hi"\n', 'utf8');
 
     const outPath = await runBuild({ file, outDir: dir, format: 'cast' });
     expect(outPath).toBe(join(dir, 'demo.cast'));
     expect(readFileSync(outPath, 'utf8')).toContain('"width":40');
+  });
 
-    await expect(
-      runBuild({ file, outDir: dir, format: 'cast', allowExec: true, record: true }),
-    ).rejects.toThrow(/a \.tape has nowhere to keep the output/);
+  it('records a tape into a new .terminal.yaml that replays the same screen', async () => {
+    const ci = process.env['CI'];
+    delete process.env['CI'];
+    try {
+      const file = join(dir, 'demo.tape');
+      writeFileSync(
+        file,
+        [
+          'Set Columns 50',
+          'Set Rows 8',
+          'Set Theme "Dracula"',
+          'Hide',
+          'Type "export NAME={tape}"',
+          'Enter',
+          'Show',
+          'Type "echo hello $NAME" Enter',
+          'Type "true" Enter',
+          'Type "oops" Ctrl+C',
+          'Sleep 500ms',
+          '',
+        ].join('\n'),
+        'utf8',
+      );
+      const live = await runBuild({
+        file,
+        outDir: join(dir, 'live'),
+        format: 'cast',
+        allowExec: true,
+      });
+      const recordedPath = await runBuild({
+        file,
+        outDir: join(dir, 'recorded'),
+        format: 'cast',
+        allowExec: true,
+        record: true,
+      });
+
+      const yamlFile = join(dir, 'demo.terminal.yaml');
+      const yamlSource = readFileSync(yamlFile, 'utf8');
+      expect(yamlSource).toContain('# Recorded from demo.tape');
+      expect(yamlSource).toContain('theme: dracula');
+      expect(yamlSource).not.toContain('exec:');
+      expect(yamlSource).not.toContain('export');
+
+      // The YAML now builds on its own, without running anything, to what the
+      // recording build produced — and that shows what the live tape showed.
+      const replay = await runBuild({
+        file: yamlFile,
+        outDir: join(dir, 'replay'),
+        format: 'cast',
+      });
+      expect(readFileSync(replay, 'utf8')).toBe(readFileSync(recordedPath, 'utf8'));
+      const screen = (path: string) => {
+        const [header, ...events] = readFileSync(path, 'utf8')
+          .trim()
+          .split('\n')
+          .map((line) => JSON.parse(line));
+        return finalFrameText({ header, events }, { includeScrollback: true });
+      };
+      const liveScreen = await screen(live);
+      expect(liveScreen).toContain('> echo hello $NAME\nhello {tape}\n> true\n> oops^C\n>');
+      expect(await screen(replay)).toBe(liveScreen);
+
+      await expect(
+        runBuild({ file, outDir: dir, format: 'cast', allowExec: true, record: true }),
+      ).rejects.toThrow(/demo\.terminal\.yaml already exists/);
+    } finally {
+      if (ci === undefined) delete process.env['CI'];
+      else process.env['CI'] = ci;
+    }
   });
 
   it('propagates a positioned parse error for an invalid script', async () => {

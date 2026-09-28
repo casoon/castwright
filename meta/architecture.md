@@ -114,6 +114,8 @@ flowchart LR
   With `exec` set, a typed line ending in `Enter` becomes an `exec:` step, and lines typed
   while hidden become its silent `setup`. The CLI and the Vite plugin choose the parser by
   file extension (`isTapeFile()`); nothing after parsing knows a tape was the source.
+  `tape/to-yaml.ts` turns a tape's Script back into YAML with `exec:` steps, which
+  `recordIntoSource()` then records — that is `--record` for a tape.
 - `exporters/svg.ts` replays the cast into `@xterm/headless`, snapshots the screen per
   frame (changes under 30 ms merged) and defines each distinct row once. Timelines follow
   buffer lines, not frames: each line of the normal buffer sits at its index on one tall

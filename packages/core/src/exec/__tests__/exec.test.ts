@@ -196,6 +196,14 @@ describe('recordIntoSource', () => {
     expect(await screen(replay)).toBe(live);
   });
 
+  it('writes no output step for a command that printed nothing', async () => {
+    const source = yaml("  - exec: 'true'\n    pause: 250\n  - exec: echo hi\n");
+    const executed = await resolveExecSteps(parse(source, file), file, { allowExec: true });
+    const recorded = recordIntoSource(source, executed.recordings);
+    expect(recorded).toContain('  - run: "true"\n    pause: 250\n  - run: echo hi\n  - output:');
+    expect(recorded.match(/output:/g)).toHaveLength(1);
+  });
+
   it('replays the recorded demo byte for byte on every build', async () => {
     const source = yaml("  - exec: 'echo one; echo two'\n");
     const executed = await resolveExecSteps(parse(source, file), file, { allowExec: true });

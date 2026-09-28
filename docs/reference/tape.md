@@ -37,8 +37,21 @@ A line edited with keys other than `Backspace` (arrows, `Tab`) is typed but not 
 pagers, prompts — cannot be driven: each command gets no input and must finish on its
 own within 60 seconds.
 
-`--record` does not apply to a tape: it writes the output into a `.terminal.yaml`, and a
-tape has nowhere to keep it.
+## From tape to YAML
+
+A tape runs its commands on every build, so its output follows whatever the machine has
+at the time. `--record` makes it deterministic: the commands run once, and the result is
+written to a new `.terminal.yaml` next to the tape.
+
+```bash
+castwright build demo.tape --allow-exec --record   # writes demo.terminal.yaml, once
+castwright build demo.terminal.yaml                # every build after, nothing runs
+```
+
+The YAML holds each command as `run:` with exactly what it printed as `output:`; hidden
+commands leave nothing behind. From then on it is an ordinary demo file to edit — the
+tape is no longer involved. An existing `.terminal.yaml` is never overwritten: delete it
+to record again.
 
 ## Commands
 

@@ -1,13 +1,14 @@
 // `castwright build <file> [-o dist] [--format cast|svg|gif|mp4]` — see docs/reference/cli.md.
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 import { compile } from '../compiler/compile.js';
 import { recordIntoSource } from '../exec/record.js';
 import { resolveExecSteps } from '../exec/resolve.js';
 import { parse } from '../parser/parse.js';
 import { resolveShowSteps } from '../show/resolve.js';
 import { isTapeFile, parseTape } from '../tape/parse.js';
+import { tapeToSource } from '../tape/to-yaml.js';
 import { CliUsageError } from './errors.js';
 import { FORMAT_NAMES, getFormat } from './formats.js';
 import { outputBaseName, printWarning } from './util.js';
@@ -110,27 +111,37 @@ export async function runBuild(options: BuildOptions): Promise<string> {
     printWarning(options.file, message, line, column);
   let source = readFileSync(options.file, 'utf8');
   const tape = isTapeFile(options.file);
-  if (tape && options.record) {
+  // A tape has nowhere to keep recorded output: --record writes a new
+  // .terminal.yaml next to it instead, and never over one that exists.
+  const recordInto = tape
+    ? join(dirname(options.file), `${outputBaseName(options.file)}.terminal.yaml`)
+    : options.file;
+  if (tape && options.record && existsSync(recordInto)) {
     throw new CliUsageError(
-      '--record writes into a .terminal.yaml; a .tape has nowhere to keep the output',
+      `${recordInto} already exists — --record on a tape writes a new file; delete it to record again`,
     );
   }
-  let script = tape
+  const parsed = tape
     ? parseTape(source, options.file, { exec: options.allowExec ?? false, onWarning })
     : parse(source, options.file, { onWarning });
+  let script = parsed;
+  let scriptFile = options.file;
   const executed = await resolveExecSteps(script, options.file, {
     ...(options.allowExec ? { allowExec: true } : {}),
     onWarning,
   });
   script = executed.script;
-  if (options.record && executed.recordings.length > 0) {
+  if (options.record && (tape || executed.recordings.length > 0)) {
     // From here on the file replays what was recorded; build from that, so the
     // artifact matches what every later build will produce.
-    source = recordIntoSource(source, executed.recordings);
-    writeFileSync(options.file, source);
-    script = parse(source, options.file, { onWarning });
+    const base = tape ? tapeToSource(parsed, basename(options.file)) : source;
+    source = recordIntoSource(base, executed.recordings);
+    writeFileSync(recordInto, source);
+    if (tape) process.stderr.write(`${recordInto}: recorded from ${options.file}\n`);
+    scriptFile = recordInto;
+    script = parse(source, scriptFile, { onWarning });
   }
-  const { script: resolved } = await resolveShowSteps(script, options.file);
+  const { script: resolved } = await resolveShowSteps(script, scriptFile);
   const cast = compile(resolved);
   const content = await outputFormat.render(cast, {
     chrome: !options.noChrome,
