@@ -3,7 +3,18 @@
 All notable changes to this project are documented here, following
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.3.1] - 2026-09-28
+## [0.4.0] - 2026-09-28
+
+### Added
+
+- `castwright build demo.tape --allow-exec --record` writes the recorded tape to a new
+  `demo.terminal.yaml` next to it: each command as `run:` with exactly what it printed,
+  hidden setup left out. The YAML then builds without running anything. An existing file
+  is never overwritten.
+
+### Changed
+
+- `--record` no longer writes an empty `output:` step for a command that printed nothing.
 
 ### Fixed
 
