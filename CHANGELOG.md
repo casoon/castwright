@@ -3,6 +3,24 @@
 All notable changes to this project are documented here, following
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] - 2026-09-28
+
+### Added
+
+- `castwright build demo.tape --allow-exec --record` writes the recorded tape to a new
+  `demo.terminal.yaml` next to it: each command as `run:` with exactly what it printed,
+  hidden setup left out. The YAML then builds without running anything. An existing file
+  is never overwritten.
+
+### Changed
+
+- `--record` no longer writes an empty `output:` step for a command that printed nothing.
+
+### Fixed
+
+- `@casoon/castwright` accepts Vite 8 as a peer. Astro 7 ships Vite 8, so installing
+  `@casoon/astro-castwright` in an Astro 7 project warned about an unmet `vite` peer.
+
 ## [0.3.0] - 2026-09-26
 
 ### Added
