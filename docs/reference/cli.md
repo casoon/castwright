@@ -65,7 +65,7 @@ missing tool is reported with an install hint and a non-zero exit.
 | Option | Effect |
 |---|---|
 | `--allow-exec` | Lets [`exec`](../dsl/#exec) steps run their commands. Without it, a file containing one fails to build. |
-| `--record` | Runs them once and rewrites the file with what they printed, as `run` + `output`. Needs `--allow-exec`. |
+| `--record` | Runs them once and rewrites the file with what they printed, as `run` + `output`. For a `.tape`, writes a new `.terminal.yaml` next to it instead. Needs `--allow-exec`. |
 
 ```bash
 castwright build demo.terminal.yaml --allow-exec --record   # once

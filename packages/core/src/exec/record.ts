@@ -70,10 +70,13 @@ export function recordIntoSource(source: string, recordings: Recording[]): strin
       ...(pause === undefined ? {} : { pause }),
     };
 
-    const runNode = doc.createNode(run);
+    // A command that printed nothing gets no output step; its pause moves to the run.
+    const silent = raw === '';
+    const runNode = doc.createNode(silent && pause !== undefined ? { ...run, pause } : run);
     // Keep a comment written above the exec step with the step that replaces it.
     if (item.commentBefore) runNode.commentBefore = item.commentBefore;
-    items.push(runNode, doc.createNode(output));
+    items.push(runNode);
+    if (!silent) items.push(doc.createNode(output));
   }
   if (next !== recordings.length)
     throw new Error('recordIntoSource: more recordings than exec steps');
