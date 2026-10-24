@@ -19,6 +19,7 @@ export default defineConfig({
       name: 'castwright',
       description:
         'Declarative terminal demos for the web. A YAML file compiles to asciicast v2 and plays as a real terminal.',
+      tagline: 'Declarative terminal demos for the web',
       repo: 'casoon/castwright',
       version,
       license: 'MIT',
