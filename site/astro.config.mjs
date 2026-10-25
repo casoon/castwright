@@ -16,6 +16,7 @@ export default defineConfig({
   base: '/castwright/',
   integrations: [
     casoonPages({
+      version: false,
       name: 'castwright',
       description:
         'Declarative terminal demos for the web. A YAML file compiles to asciicast v2 and plays as a real terminal.',
