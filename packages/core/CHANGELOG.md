@@ -1,5 +1,17 @@
 # @casoon/castwright
 
+## 0.5.0
+
+### Minor Changes
+
+- d7e5a94: The animated SVG opens on the finished screen, held for `--loop-delay`, and then plays from
+  the beginning; `--start beginning` keeps the old behaviour. After a `clear:` the previous
+  screen stays up until the next prompt instead of a blank terminal.
+
+### Patch Changes
+
+- @casoon/castwright-player@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes

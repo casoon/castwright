@@ -1,5 +1,13 @@
 # @casoon/astro-castwright
 
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies [d7e5a94]
+  - @casoon/castwright@0.5.0
+  - @casoon/castwright-player@0.5.0
+
 ## 0.4.0
 
 ### Patch Changes
