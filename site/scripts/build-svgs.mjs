@@ -20,6 +20,7 @@ const repo = join(here, '..', '..');
 const out = join(here, '..', 'public', 'svg');
 
 for (const file of [
+  'site/src/demos/hero-svg.terminal.yaml',
   'site/src/demos/files/install.terminal.yaml',
   'site/src/demos/error-fix.terminal.yaml',
 ]) {

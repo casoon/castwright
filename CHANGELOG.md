@@ -15,6 +15,10 @@ All notable changes to this project are documented here, following
 - **SVG:** opens on the finished screen, held for `--loop-delay`, and then plays from the
   beginning — instead of an almost empty terminal while the first command is typed.
   `--start beginning` keeps the old behaviour.
+- **Project page:** the start page shows a scene as castwright's own animated SVG export,
+  says who castwright is for, and explains the way from a `.terminal.yaml` file to the web
+  player, SVG, GIF and MP4 in a diagram, also in the
+  [documentation](https://casoon.github.io/castwright/docs/).
 
 ### Fixed
 

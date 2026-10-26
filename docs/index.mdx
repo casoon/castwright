@@ -22,6 +22,16 @@ It is explicitly *not* a terminal recorder and *not* a terminal emulator. ANSI a
 handling is xterm.js's job; the interchange format already exists. castwright's own
 substance is the authoring language, the compiler, the player and the exporters.
 
+## From a file to every output
+
+<Diagram name="how-it-works" narrow={{ width: 380, height: 520 }} />
+
+Commands whose real output you want run once with `--allow-exec --record`, which writes
+what they printed back into the file ([Recipes](./guides/recipes/)); a VHS `.tape` takes
+the same path ([VHS tapes](./reference/tape/)). GIF and MP4 need
+[agg](https://github.com/asciinema/agg) and [ffmpeg](https://ffmpeg.org) on the `PATH`
+([CLI](./reference/cli/)).
+
 ## Where to start
 
 - [Installation](./getting-started/installation/) — the three packages and which you need.

@@ -1,35 +1,30 @@
 ---
-import { compile, parse } from '@casoon/castwright';
+import config from 'virtual:casoon-pages/config';
 import {
   Badge,
   Badges,
-  BuildOutput,
+  Button,
   CodeBlock,
   Facts,
   Features,
   Hero,
   Install,
   Quickstart,
-  Terminal,
 } from '@casoon/pages-theme/components';
 import Base from '@casoon/pages-theme/layouts/Base.astro';
-import basicSource from '../../../examples/basic.terminal.yaml?raw';
-import { ASTRO_USAGE, DEMO_YAML } from '../samples';
+import { url } from '@casoon/pages-theme/url';
+import Diagram from '../components/Diagram.astro';
 
-// The hero's terminal is not a screenshot and not hand-written ANSI: it is the
-// byte stream castwright's own compiler produced from the file next to it,
-// during this build.
-const cast = compile(parse(basicSource, 'examples/basic.terminal.yaml'));
-const heroAnsi = cast.events
-  .filter((event): event is [number, 'o', string] => event[1] === 'o')
-  .map((event) => event[2])
-  .join('');
+// The hero is castwright's own output: src/demos/hero-svg.terminal.yaml, built
+// to an animated SVG by `castwright build --format svg` before every site build
+// (scripts/build-svgs.mjs). No player and no script — the same file a README gets.
+// width/height are the SVG's viewBox.
 ---
 
 <Base>
   <Hero
     title="Terminal demos you write, not record."
-    lead="castwright compiles a small YAML file to asciicast v2 and plays it as a real terminal — real ANSI, real cursor movement, selectable text — with no headless browser anywhere in your build."
+    lead="Describe a terminal session in a short YAML file. castwright turns it into the demo for your README, docs or landing page — an animated SVG, a live terminal or a GIF. No screen recording, no retakes."
   >
     <Install
       commands={[
@@ -39,68 +34,115 @@ const heroAnsi = cast.events
       ]}
     />
     <Badges>
-      <Badge>MIT</Badge>
+      <Badge>Free · MIT</Badge>
+      <Badge>v{config.version}</Badge>
+      <Badge>Node 22+</Badge>
       <Badge>asciicast v2</Badge>
-      <Badge>xterm.js</Badge>
-      <Badge>WCAG 2.2 AA</Badge>
     </Badges>
-    <Terminal slot="output" title="examples/basic.terminal.yaml" dots ansi={heroAnsi} />
+    <img
+      slot="output"
+      class="hero-scene"
+      src={url('/svg/hero-svg.svg')}
+      width="477.6"
+      height="350"
+      alt="Terminal: cat deploy.terminal.yaml shows a short castwright scene, highlighted, in which npm run deploy prints two green check marks for build and upload. castwright build deploy.terminal.yaml --format svg then writes dist/deploy.svg, and castwright build without a format writes dist/deploy.cast."
+    />
   </Hero>
+
+  <Features
+    heading="Who it is for"
+    items={[
+      {
+        title: 'Anyone with a CLI to show',
+        body: 'Your README needs to show the tool working. Instead of a screen recording that goes stale with the next release, you keep a file next to the code and rebuild the demo from it.',
+      },
+      {
+        title: 'Docs and landing pages',
+        body: 'A real terminal in the page, not a video: selectable text, a pause control, and with reduced motion the final frame straight away.',
+      },
+      {
+        title: 'Real output, recorded once',
+        body: 'Let castwright run a command once and keep exactly what it printed. Every later build replays those bytes, on any machine. An existing VHS .tape builds as it is.',
+      },
+    ]}
+  />
 
   <Facts
     items={[
-      { value: '381', label: 'unit tests' },
-      { value: '22', label: 'browser tests, desktop and mobile' },
-      { value: '0', label: 'axe violations at WCAG 2.2 AA' },
-      { value: '0 kB', label: 'parser or compiler shipped to the browser' },
+      { value: '4', label: 'output formats: cast, SVG, GIF and MP4' },
+      { value: '7', label: 'bundled terminal themes' },
+      { value: '0', label: 'scripts in the SVG — it plays on GitHub' },
+      { value: '0', label: 'headless browsers in your build' },
     ]}
   />
 
-  <Features
-    items={[
-      {
-        title: 'Authored, not performed',
-        body: 'No recording session to get right on the seventh take. Edit a line, rebuild, and the demo changes — the same way the rest of your documentation does.',
-      },
-      {
-        title: 'A real terminal, not a lookalike',
-        body: 'xterm.js interprets the bytes, so cursor movement, line rewrites and carriage returns behave as they would in a shell. Coloured spans in a <pre> cannot do that.',
-      },
-      {
-        title: 'Deterministic output',
-        body: 'The same input compiles to the same bytes on every machine. A generated .cast is a text file you commit and read in a diff, and typing jitter is seeded so it stays that way.',
-      },
-      {
-        title: 'One file, every output',
-        body: 'The same .cast plays in the page, exports to an animated SVG for a README — real text, no JavaScript — and to GIF or MP4 for everywhere else.',
-      },
-      {
-        title: 'Real files and real commands',
-        body: 'show: puts a file on screen, syntax-highlighted at build time. exec: runs a command for real, and --record writes its output back into the file so every later build replays the same bytes.',
-      },
-      {
-        title: 'Accessible by construction',
-        body: 'The element’s children are the terminal’s final text, generated at build time — real content before the script loads and if it never does. Reduced motion is honoured and there is always a pause control.',
-      },
-    ]}
-  />
-
-  <BuildOutput
-    caption="This is the file that produced the terminal at the top of the page, compiled during this build. No screenshots, nothing kept in step by hand."
-    file="examples/basic.terminal.yaml"
-  >
-    <CodeBlock code={DEMO_YAML} lang="yaml" title="demo.terminal.yaml" />
-  </BuildOutput>
+  <section class="how" aria-labelledby="how-heading">
+    <h2 id="how-heading">How it works</h2>
+    <div class="text">
+      <p>
+        A scene is a list of steps: a command that gets typed, what it prints, a file to show,
+        a pause. You write it like any other file in your repository and review it in a diff.
+      </p>
+      <p>
+        castwright compiles the scene to a standard asciicast file, byte for byte the same on
+        every build. From there it becomes whatever the place needs: a player for the web page,
+        an animated SVG for the README, or a GIF and MP4 for everywhere else.
+      </p>
+    </div>
+    <Diagram name="how-it-works" format="svg" narrow={{ width: 380, height: 520 }} />
+    <div class="links">
+      <Button href={url('docs/guides/writing-demos/')} variant="secondary">Writing demos</Button>
+      <Button href={url('docs/guides/recipes/')} variant="secondary">Recipes</Button>
+      <Button href={url('demo/')} variant="quiet">See it play live →</Button>
+    </div>
+  </section>
 
   <Quickstart
-    lead="Three steps from install to a demo on the page. The walkthrough, the DSL reference and the integration guides are in the documentation."
+    lead="From an empty file to a demo in your README. Putting the player on a page, the full walkthrough and every option are in the documentation."
     steps={[
-      'Register the Vite plugin, or the Astro integration that wraps it.',
-      'Write a <code>*.terminal.yaml</code> file describing the session.',
-      'Import it and hand it to <code>&lt;TerminalDemo&gt;</code>, or to the <code>&lt;castwright-demo&gt;</code> element directly.',
+      'Write a <code>demo.terminal.yaml</code>: the commands to type and what they print.',
+      'Build it to an animated SVG with one command.',
+      'Put it in your README as an <code>&lt;img&gt;</code>, or play it in the page with the Vite plugin or the Astro component.',
     ]}
   >
-    <CodeBlock code={ASTRO_USAGE} lang="astro" title="src/pages/index.astro" />
+    <CodeBlock code="npx castwright build demo.terminal.yaml --format svg" lang="sh" label="Build" />
   </Quickstart>
 </Base>
 
+<style>
+  /* Never scale the scene beyond a readable terminal size. */
+  .hero-scene {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    margin: 0 auto;
+  }
+  .how {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+  h2 {
+    margin: 0 0 14px;
+    color: var(--heading);
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .text {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+    gap: 0 48px;
+  }
+  .text p {
+    margin: 0 0 16px;
+    font-size: 15.5px;
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+</style>

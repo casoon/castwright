@@ -1,0 +1,11 @@
+version: 1
+terminal:
+  cols: 60
+  rows: 8
+  theme: catppuccin-mocha
+steps:
+  - run: npm run deploy
+  - output: |
+      {green}✓{/} build   {dim}1.8s{/}
+      {green}✓{/} upload  {dim}12 files{/}
+  - wait: 1500
