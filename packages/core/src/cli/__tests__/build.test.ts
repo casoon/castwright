@@ -40,6 +40,18 @@ describe('parseBuildArgs', () => {
     });
   });
 
+  it('accepts --start final|beginning with --format svg', () => {
+    expect(parseBuildArgs(['d.terminal.yaml', '--format', 'svg', '--start', 'beginning'])).toEqual(
+      { file: 'd.terminal.yaml', outDir: 'dist', format: 'svg', start: 'beginning' },
+    );
+    expect(() =>
+      parseBuildArgs(['d.terminal.yaml', '--format', 'svg', '--start', 'middle']),
+    ).toThrow(/--start requires 'final' or 'beginning'/);
+    expect(() => parseBuildArgs(['d.terminal.yaml', '--start', 'final'])).toThrow(
+      /--start only applies to --format svg/,
+    );
+  });
+
   it('rejects the SVG options with any other format', () => {
     expect(() => parseBuildArgs(['d.terminal.yaml', '--no-chrome'])).toThrow(
       /--no-chrome only applies to --format svg/,

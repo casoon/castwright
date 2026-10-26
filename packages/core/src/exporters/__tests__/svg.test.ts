@@ -79,6 +79,28 @@ describe('renderSvg', () => {
     );
   });
 
+  it('opens on the finished screen unless told to start at the beginning', async () => {
+    const cast: Cast = {
+      header: header(),
+      events: [
+        [0.5, 'o', 'a'],
+        [1, 'o', 'b'],
+      ],
+    };
+    // Every timeline starts just inside the final hold (1 s of 2 s)…
+    expect(await renderSvg(cast, { loopDelay: 1000 })).toContain(
+      'animation-iteration-count:infinite;animation-delay:-1.01s}',
+    );
+    // …and at 0 with start: 'beginning'.
+    expect(await renderSvg(cast, { loopDelay: 1000, start: 'beginning' })).toContain(
+      'animation-iteration-count:infinite}',
+    );
+    // Reduced motion still pauses in the middle of the hold, whichever start.
+    expect(await renderSvg(cast, { loopDelay: 1000 })).toContain(
+      '@media (prefers-reduced-motion:reduce){.a{animation-play-state:paused;animation-delay:-1.5s}}',
+    );
+  });
+
   it('keeps the previous screen up instead of showing a blank one after a clear', async () => {
     const svg = await renderSvg(
       {
