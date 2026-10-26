@@ -3,6 +3,24 @@
 All notable changes to this project are documented here, following
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **SVG:** `--start final|beginning` chooses where the loop's first pass starts.
+  Details: [CLI reference](https://casoon.github.io/castwright/docs/reference/cli/#formats).
+
+### Changed
+
+- **SVG:** opens on the finished screen, held for `--loop-delay`, and then plays from the
+  beginning — instead of an almost empty terminal while the first command is typed.
+  `--start beginning` keeps the old behaviour.
+
+### Fixed
+
+- **SVG:** after a `clear:` the previous screen stays up until the next prompt, instead of
+  a blank terminal for the length of the step's pause.
+
 ## [0.4.0] - 2026-09-28
 
 ### Added

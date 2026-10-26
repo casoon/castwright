@@ -35,8 +35,10 @@ castwright build demo.terminal.yaml --format svg -o .github/readme
 <img src=".github/readme/demo.svg" alt="What the demo shows, in one sentence." width="720">
 ```
 
-The SVG honours reduced motion — a visitor who has it switched on sees the finished
-screen, standing still. `--no-chrome` drops the title bar; `--loop-delay <ms>` sets how
+The SVG opens on the finished screen and then plays from the beginning, so the first thing
+a visitor sees is the result rather than an empty terminal (`--start beginning` opens on
+the empty one). It honours reduced motion — a visitor who has it switched on sees the
+finished screen, standing still. `--no-chrome` drops the title bar; `--loop-delay <ms>` sets how
 long the last frame holds. For places that take no SVG (chat, social cards),
 `--format gif` renders the same cast through [agg](https://github.com/asciinema/agg).
 
