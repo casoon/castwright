@@ -22,6 +22,8 @@ type HeadlessTerminal = InstanceType<typeof Terminal>;
 type BufferLine = NonNullable<ReturnType<HeadlessTerminal['buffer']['active']['getLine']>>;
 type BufferCell = ReturnType<HeadlessTerminal['buffer']['active']['getNullCell']>;
 
+export type SvgStart = 'final' | 'beginning';
+
 export interface SvgOptions {
   /** Window title bar with traffic lights. Default true. */
   chrome?: boolean;
@@ -33,6 +35,13 @@ export interface SvgOptions {
    * frame per character.
    */
   minFrameInterval?: number;
+  /**
+   * Where the first pass of the loop starts. `'final'` (the default) opens on
+   * the finished screen, held for `loopDelay`, and then plays the demo from
+   * the beginning — every pass is the same replay, only the first one starts
+   * at its end. `'beginning'` opens on the empty terminal.
+   */
+  start?: SvgStart;
 }
 
 // Geometry in SVG user units. The cell width is pinned via `textLength`, so the
@@ -331,7 +340,13 @@ async function collectFrames(
   // The first snapshot is time 0 even when the cast's first event is too;
   // two frames at the same instant keep only the later one.
   const deduped = frames.filter((frame, i) => frames[i + 1]?.time !== frame.time);
-  return { frames: deduped, cols: maxCols, rows: maxRows };
+  // A screen with nothing on it between two that have something — after a
+  // `clear`, until the next prompt — reads as a broken image, not as a pause.
+  // The previous screen stays up until the next one has content.
+  const shown = deduped.filter(
+    (frame, i) => i === 0 || i === deduped.length - 1 || frame.rows.some((id) => id !== undefined),
+  );
+  return { frames: shown, cols: maxCols, rows: maxRows };
 }
 
 function sameFrame(a: Frame, b: Frame): boolean {
@@ -345,6 +360,7 @@ export async function renderSvg(cast: Cast, options: SvgOptions = {}): Promise<s
   const chrome = options.chrome ?? true;
   const loopDelay = options.loopDelay ?? 2000;
   const minFrameInterval = options.minFrameInterval ?? 30;
+  const startOnFinal = (options.start ?? 'final') === 'final';
   const theme = cast.header.theme ?? resolveTheme('default');
 
   const renderer = new RowRenderer(theme);
@@ -490,8 +506,14 @@ export async function renderSvg(cast: Cast, options: SvgOptions = {}): Promise<s
     // Reduced motion shows the finished screen: every timeline paused at the
     // same instant inside the final hold.
     const hold = (last?.time ?? 0) + (total - (last?.time ?? 0)) / 2;
+    // Opening on the final screen: a negative delay starts every timeline in
+    // the final hold — just past its first keyframe, which `pct` may have
+    // rounded up a little.
+    const end = last?.time ?? 0;
+    const finalAt = Math.min(hold, Math.ceil((end + total / 100_000) * 100) / 100);
+    const start = startOnFinal && total > end ? `;animation-delay:-${num(finalAt)}s` : '';
     animation =
-      `.a{animation-duration:${num(total)}s;animation-timing-function:steps(1,end);animation-iteration-count:infinite}` +
+      `.a{animation-duration:${num(total)}s;animation-timing-function:steps(1,end);animation-iteration-count:infinite${start}}` +
       animation +
       `@media (prefers-reduced-motion:reduce){.a{animation-play-state:paused;animation-delay:-${num(hold)}s}}`;
   }

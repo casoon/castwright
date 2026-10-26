@@ -9,7 +9,7 @@ Errors go to stderr, results to stdout, so the commands compose.
 ## build
 
 ```
-castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--allow-exec [--record]]
+castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--start final|beginning] [--allow-exec [--record]]
 ```
 
 Compiles a `*.terminal.yaml` — or a [VHS `.tape`](../tape/) — to `<dir>/<name>.<format>`
@@ -39,16 +39,23 @@ theme, bold, italic, dim and underline come across; the column grid is pinned wi
 `textLength`, so a different monospace font on the viewer's machine changes glyph shapes
 but never alignment. `prefers-reduced-motion` shows the finished screen.
 
+The SVG opens on the finished screen: the loop's first pass starts in the final hold, so a
+visitor sees the end result first, and after `--loop-delay` the demo plays from the
+beginning. Every pass after that is the same replay. A screen that is blank only between
+two others — after a `clear:`, until the next prompt — is left out; the previous screen
+stays up until the next one has content.
+
 ```markdown
 ![castwright demo](docs/demo.svg)
 ```
 
-Two options apply to `svg` only:
+Three options apply to `svg` only:
 
 | Option | Effect |
 |---|---|
 | `--no-chrome` | Drops the window title bar with the traffic lights. |
 | `--loop-delay <ms>` | How long the finished screen holds before the loop restarts. Default 2000. |
+| `--start final\|beginning` | Where the first pass starts. `final` (default) opens on the finished screen; `beginning` opens on the empty terminal. |
 
 Size grows with the length of the demo, at roughly 2 KB per second of typing and output
 before compression — about 50 KB for 20 seconds, 120 KB for a minute. Each line of the
