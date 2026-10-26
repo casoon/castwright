@@ -79,6 +79,24 @@ describe('renderSvg', () => {
     );
   });
 
+  it('keeps the previous screen up instead of showing a blank one after a clear', async () => {
+    const svg = await renderSvg(
+      {
+        header: header(),
+        events: [
+          [0, 'o', 'a'],
+          [1, 'o', '\x1b[2J\x1b[H'],
+          [2, 'o', 'b'],
+        ],
+      },
+      { loopDelay: 2000 },
+    );
+    // The line goes from 'a' straight to 'b' at 2 s of 4 s; the cleared screen
+    // at 1 s (25 %) is not a state of any timeline.
+    expect(svg).toContain('@keyframes k0{0%{translate:0px}50%{translate:-168px}');
+    expect(svg).not.toContain('25%{');
+  });
+
   it('does not repeat unchanged lines while typing', async () => {
     const svg = await renderSvg({
       header: header(20, 3),

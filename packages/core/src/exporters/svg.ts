@@ -331,7 +331,13 @@ async function collectFrames(
   // The first snapshot is time 0 even when the cast's first event is too;
   // two frames at the same instant keep only the later one.
   const deduped = frames.filter((frame, i) => frames[i + 1]?.time !== frame.time);
-  return { frames: deduped, cols: maxCols, rows: maxRows };
+  // A screen with nothing on it between two that have something — after a
+  // `clear`, until the next prompt — reads as a broken image, not as a pause.
+  // The previous screen stays up until the next one has content.
+  const shown = deduped.filter(
+    (frame, i) => i === 0 || i === deduped.length - 1 || frame.rows.some((id) => id !== undefined),
+  );
+  return { frames: shown, cols: maxCols, rows: maxRows };
 }
 
 function sameFrame(a: Frame, b: Frame): boolean {
