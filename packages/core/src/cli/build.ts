@@ -5,6 +5,7 @@ import { basename, dirname, join } from 'node:path';
 import { compile } from '../compiler/compile.js';
 import { recordIntoSource } from '../exec/record.js';
 import { resolveExecSteps } from '../exec/resolve.js';
+import type { SvgStart } from '../exporters/svg.js';
 import { parse } from '../parser/parse.js';
 import { resolveShowSteps } from '../show/resolve.js';
 import { isTapeFile, parseTape } from '../tape/parse.js';
@@ -21,6 +22,8 @@ export interface BuildOptions {
   noChrome?: boolean;
   /** SVG only: ms the last frame holds before the loop restarts. */
   loopDelay?: number;
+  /** SVG only: open on the finished screen (default) or on the empty terminal. */
+  start?: SvgStart;
   /** Let `exec:` steps run their commands. */
   allowExec?: boolean;
   /** Write what `exec:` steps produced back into the YAML file. Implies running them. */
@@ -28,7 +31,7 @@ export interface BuildOptions {
 }
 
 const USAGE =
-  'usage: castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--allow-exec [--record]]';
+  'usage: castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--start final|beginning] [--allow-exec [--record]]';
 
 export function parseBuildArgs(args: string[]): BuildOptions {
   let file: string | undefined;
@@ -36,6 +39,7 @@ export function parseBuildArgs(args: string[]): BuildOptions {
   let format = 'cast';
   let noChrome = false;
   let loopDelay: number | undefined;
+  let start: SvgStart | undefined;
   let allowExec = false;
   let record = false;
 
@@ -58,6 +62,12 @@ export function parseBuildArgs(args: string[]): BuildOptions {
         throw new CliUsageError(`--loop-delay requires a whole number of milliseconds\n${USAGE}`);
       }
       loopDelay = ms;
+    } else if (arg === '--start') {
+      const value = args[++i];
+      if (value !== 'final' && value !== 'beginning') {
+        throw new CliUsageError(`--start requires 'final' or 'beginning'\n${USAGE}`);
+      }
+      start = value;
     } else if (arg === '--allow-exec') {
       allowExec = true;
     } else if (arg === '--record') {
@@ -75,8 +85,8 @@ export function parseBuildArgs(args: string[]): BuildOptions {
     throw new CliUsageError(`missing <file>\n${USAGE}`);
   }
 
-  if ((noChrome || loopDelay !== undefined) && format !== 'svg') {
-    const flag = noChrome ? '--no-chrome' : '--loop-delay';
+  if ((noChrome || loopDelay !== undefined || start !== undefined) && format !== 'svg') {
+    const flag = noChrome ? '--no-chrome' : loopDelay !== undefined ? '--loop-delay' : '--start';
     throw new CliUsageError(`${flag} only applies to --format svg\n${USAGE}`);
   }
 
@@ -93,6 +103,7 @@ export function parseBuildArgs(args: string[]): BuildOptions {
     format,
     ...(noChrome ? { noChrome } : {}),
     ...(loopDelay === undefined ? {} : { loopDelay }),
+    ...(start === undefined ? {} : { start }),
     ...(allowExec ? { allowExec } : {}),
     ...(record ? { record } : {}),
   };
@@ -146,6 +157,7 @@ export async function runBuild(options: BuildOptions): Promise<string> {
   const content = await outputFormat.render(cast, {
     chrome: !options.noChrome,
     ...(options.loopDelay === undefined ? {} : { loopDelay: options.loopDelay }),
+    ...(options.start === undefined ? {} : { start: options.start }),
   });
 
   mkdirSync(options.outDir, { recursive: true });

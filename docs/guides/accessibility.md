@@ -39,6 +39,13 @@ Under `prefers-reduced-motion: reduce` the player skips the animation and shows 
 frame immediately. The controls stay, for anyone who set that preference for other reasons
 and does want to watch this particular thing play.
 
+The animated SVG export does the same with CSS alone: under `prefers-reduced-motion:
+reduce` every timeline is paused on the finished screen. It works inside an `<img>`, where
+the browser passes its own setting into the image. Playwright's `reducedMotion: 'reduce'`
+does not reach that far — it emulates the media feature for the page, not for images in
+it — so a test of an SVG in an `<img>` sees it animate. In Chromium, test with the
+browser-wide preference instead: `chromium.launch({ args: ['--force-prefers-reduced-motion'] })`.
+
 ## There is always a way to stop it
 
 [WCAG 2.2 SC 2.2.2](https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html)
