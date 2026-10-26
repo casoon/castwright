@@ -3,6 +3,15 @@
 All notable changes to this project are documented here, following
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- **Project page:** the start page shows a scene as castwright's own animated SVG export,
+  says who castwright is for, and explains the way from a `.terminal.yaml` file to the web
+  player, SVG, GIF and MP4 in a diagram, also in the
+  [documentation](https://casoon.github.io/castwright/docs/).
+
 ## [0.4.0] - 2026-09-28
 
 ### Added
