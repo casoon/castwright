@@ -1,0 +1,25 @@
+# The start page's hero: castwright, showing what castwright does. The page
+# shows this scene as the animated SVG `castwright build --format svg` makes of
+# it (scripts/build-svgs.mjs) — no player, no script. The shown file is
+# files/deploy.terminal.yaml; the two build lines are what castwright printed
+# when it was run on that file (cols kept narrow so the hero stays readable on a phone).
+version: 1
+terminal:
+  title: ~/my-cli
+  cols: 54
+  rows: 17
+  theme: catppuccin-mocha
+steps:
+  - run: cat deploy.terminal.yaml
+  - show: files/deploy.terminal.yaml
+  - wait: 1800
+  - run: castwright build deploy.terminal.yaml --format svg
+  - output:
+      raw: |
+        dist/deploy.svg
+  - wait: 600
+  - run: castwright build deploy.terminal.yaml
+  - output:
+      raw: |
+        dist/deploy.cast
+  - wait: 3000

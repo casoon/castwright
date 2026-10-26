@@ -117,10 +117,15 @@ test.describe('prefers-reduced-motion', () => {
 });
 
 test.describe('the start page', () => {
-  test("shows the compiler's real output, not a screenshot", async ({ page }) => {
+  test("shows castwright's own SVG export, not a screenshot", async ({ page }) => {
     await page.goto('./');
-    // The hero terminal is build-time-rendered ANSI, so it is text in the DOM.
-    await expect(page.locator('main')).toContainText('npx casoon create my-app');
+    // The hero is the SVG `castwright build --format svg` wrote during this build.
+    const hero = page.locator('img.hero-scene');
+    await expect(hero).toBeVisible();
+    expect(await hero.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+    const svg = await (await page.request.get((await hero.getAttribute('src')) as string)).text();
+    expect(svg).toContain('dist/deploy.svg');
+    expect(svg).not.toContain('<script');
   });
 });
 

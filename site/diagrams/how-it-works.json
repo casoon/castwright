@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "type": "flow",
+  "title": "How castwright works",
+  "description": "You write a terminal scene as a .terminal.yaml file. Commands that should show real output run once with --allow-exec --record, which writes what they printed back into the file; a VHS .tape builds the same way. castwright compiles the scene to asciicast v2, the same bytes on every build. That one cast plays in the web player, exports to an animated SVG without script, and to GIF or MP4 through agg and ffmpeg.",
+  "source": "packages/core/src/parser, compiler, exec, tape, exporters, cli/formats.ts; packages/player",
+  "width": 1000,
+  "height": 280,
+  "flow": {
+    "nodes": [
+      {
+        "id": "yaml",
+        "label": "Write a scene",
+        "sublabel": ".terminal.yaml",
+        "kind": "start"
+      },
+      {
+        "id": "real",
+        "label": "Real commands",
+        "sublabel": "exec: or a VHS .tape, run once",
+        "kind": "start"
+      },
+      {
+        "id": "compile",
+        "label": "Compile",
+        "sublabel": "asciicast v2, same bytes"
+      },
+      {
+        "id": "player",
+        "label": "Web player",
+        "sublabel": "xterm.js, Vite, Astro",
+        "kind": "end"
+      },
+      {
+        "id": "svg",
+        "label": "Animated SVG",
+        "sublabel": "no script, for READMEs",
+        "kind": "end"
+      },
+      {
+        "id": "raster",
+        "label": "GIF or MP4",
+        "sublabel": "via agg and ffmpeg",
+        "kind": "end"
+      }
+    ],
+    "edges": [
+      {
+        "from": "yaml",
+        "to": "compile"
+      },
+      {
+        "from": "real",
+        "to": "compile",
+        "label": "recorded"
+      },
+      {
+        "from": "compile",
+        "to": "player",
+        "label": ".cast"
+      },
+      {
+        "from": "compile",
+        "to": "svg"
+      },
+      {
+        "from": "compile",
+        "to": "raster"
+      }
+    ],
+    "mainPath": ["yaml", "compile", "svg"],
+    "orientation": "landscape"
+  }
+}

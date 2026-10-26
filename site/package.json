@@ -13,17 +13,18 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@casoon/pages-theme": "file:./vendor/pages-theme",
-    "astro": "^7.3.2",
     "@casoon/castwright": "workspace:*",
-    "@casoon/castwright-player": "workspace:*"
+    "@casoon/castwright-player": "workspace:*",
+    "@casoon/chartlet": "^0.21.0",
+    "@casoon/pages-theme": "file:./vendor/pages-theme",
+    "astro": "^7.3.2"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "@types/node": "^24.13.4",
-    "typescript": "^6.0.3",
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
-    "@axe-core/playwright": "^4.13.0"
+    "@types/node": "^24.13.4",
+    "typescript": "^6.0.3"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
