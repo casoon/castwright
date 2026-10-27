@@ -5,6 +5,10 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Changed
+
+- **Releases:** the packages are published from a tag workflow with npm Trusted Publishing (provenance, no stored token), after approval in the `npm` environment.
+
 ## [0.5.0] - 2026-10-26
 
 ### Added

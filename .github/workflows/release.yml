@@ -30,13 +30,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Versioning only. Publishing to npm is done by hand, from a maintainer's
-      # machine — see "Releasing" in meta/conventions.md — so this workflow has
+      # Versioning only. Publishing to npm is done by `publish.yml` on a tag — see
+      # "Releasing" in meta/conventions.md — so this workflow has
       # no npm token and never runs `changeset publish`.
       #
       # With pending changesets this opens (or updates) the "Version Packages"
       # PR. Merging that PR bumps the versions and writes the changelogs; the
-      # publish is the maintainer's next step.
+      # publish follows with the tag.
       - name: Version packages
         uses: changesets/action@v1
         with:

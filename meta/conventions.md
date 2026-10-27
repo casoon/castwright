@@ -82,20 +82,20 @@ Biome disagreeing with something else rather than about taste:
 
 ## Releasing
 
-Versioning is automated, publishing is not. Pushing to `main` with pending changesets
-opens a "Version Packages" pull request; merging it bumps the versions and writes the
-changelogs. **`npm publish` is then run by hand, from a maintainer's machine** — the
-release workflow holds no npm token and never runs `changeset publish`.
+Versioning and publishing are automated; the publish needs one approval. Pushing to
+`main` with pending changesets opens a "Version Packages" pull request; merging it bumps
+the versions and writes the changelogs. Then tag the merge commit:
 
 ```bash
 git switch main && git pull
-pnpm install && pnpm build
-pnpm test && pnpm test:pack && pnpm test:compat
-pnpm release          # changeset publish
+git tag vX.Y.Z && git push origin vX.Y.Z
 ```
 
-The trade-off this accepts: npm provenance attestations can only be produced by a CI
-publish, so packages released this way do not carry one.
+The tag starts `.github/workflows/publish.yml`: it runs the tests (including `test:pack`
+and `test:compat`), then waits for approval in the `npm` environment (Required Reviewer)
+and publishes the three packages through npm Trusted Publishing — no token, provenance
+attached. Never run `npm publish` from a machine; a package published there carries no
+provenance. The tag has to match the package versions, or the workflow stops.
 
 ## Commits
 
