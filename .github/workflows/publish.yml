@@ -1,0 +1,80 @@
+name: Publish
+
+# Tag `vX.Y.Z` (after the "Version Packages" PR is merged) → verify, then publish
+# the three packages to npm with Trusted Publishing (provenance, no stored token)
+# after approval in the `npm` environment. The tag must match the package versions.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Tag matches the package versions
+        run: |
+          for p in core player astro; do
+            test "${GITHUB_REF_NAME#v}" = "$(node -p "require('./packages/$p/package.json').version")"
+          done
+
+      - run: pnpm test
+      - run: pnpm test:pack
+      - run: pnpm test:compat
+
+  publish-npm:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Update npm (Trusted Publishing needs >= 11.5)
+        run: npm install -g npm@latest
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      # `pnpm pack` rewrites the workspace: ranges; `npm publish` of the tarball
+      # signs the provenance. The order is the dependency order. A release
+      # interrupted halfway is finished by running the job again.
+      - name: Publish
+        run: |
+          set -euo pipefail
+          for p in player core astro; do
+            dir="packages/$p"
+            name=$(node -p "require('./$dir/package.json').name")
+            version=$(node -p "require('./$dir/package.json').version")
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "$name@$version is on npm already — skipped"
+              continue
+            fi
+            (cd "$dir" && pnpm pack --pack-destination "$RUNNER_TEMP")
+            tarball="$RUNNER_TEMP/$(echo "${name#@}" | tr '/' '-')-$version.tgz"
+            npm publish --access public "$tarball"
+          done
