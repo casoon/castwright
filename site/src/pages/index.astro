@@ -1,4 +1,5 @@
 ---
+import { readFile } from 'node:fs/promises';
 import config from 'virtual:casoon-pages/config';
 import {
   Badge,
@@ -6,12 +7,15 @@ import {
   Button,
   CodeBlock,
   Facts,
+  Faq,
   Features,
   Hero,
   Install,
   Quickstart,
+  ReleaseHighlights,
 } from '@casoon/pages-theme/components';
 import Base from '@casoon/pages-theme/layouts/Base.astro';
+import { parseChangelog } from '@casoon/pages-theme/lib/changelog';
 import { url } from '@casoon/pages-theme/url';
 import Diagram from '../components/Diagram.astro';
 
@@ -19,6 +23,13 @@ import Diagram from '../components/Diagram.astro';
 // to an animated SVG by `castwright build --format svg` before every site build
 // (scripts/build-svgs.mjs). No player and no script — the same file a README gets.
 // width/height are the SVG's viewBox.
+
+// Skip "Unreleased": it has no version to show as "New in v…" yet.
+const latestRelease = config.changelog
+  ? parseChangelog(await readFile(config.changelog, 'utf8')).find(
+      (r) => r.version.toLowerCase() !== 'unreleased',
+    )
+  : undefined;
 ---
 
 <Base>
@@ -107,6 +118,33 @@ import Diagram from '../components/Diagram.astro';
   >
     <CodeBlock code="npx castwright build demo.terminal.yaml --format svg" lang="sh" label="Build" />
   </Quickstart>
+
+  {latestRelease && <ReleaseHighlights release={latestRelease} />}
+
+  <Faq
+    items={[
+      {
+        q: 'What does a build actually produce?',
+        a: 'One asciicast v2 file. From there it becomes a web player, an animated SVG for a README, or a GIF or MP4 through agg and ffmpeg — whichever the place needs.',
+      },
+      {
+        q: 'Does it need a headless browser or a screen recording?',
+        a: 'No. The compiler runs in plain Node, and the same input always produces the same bytes — no wall clock, no unseeded randomness — so a compiled cast is a text file you can commit and read in a diff.',
+      },
+      {
+        q: 'Can a scene show real command output instead of typed-out text?',
+        a: 'Yes. An exec: step runs the command for real in a pseudo-terminal, and --record writes what it printed back into the file, so every later build replays those exact bytes instead of running anything again.',
+      },
+      {
+        q: 'Does it only work with Astro?',
+        a: 'No. @casoon/astro-castwright is a thin wrapper around a Vite plugin that also covers SvelteKit, Nuxt, Remix, SolidStart, Qwik, VitePress and plain Vite — and with no bundler at all, a single script tag loads the player.',
+      },
+      {
+        q: 'Is the player accessible?',
+        a: "Yes. Its children are the terminal's real, selectable final text, generated at build time; reduced motion shows that final frame immediately, there is always a real pause control, and it is never a keyboard trap.",
+      },
+    ]}
+  />
 </Base>
 
 <style>

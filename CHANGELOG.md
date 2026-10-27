@@ -8,6 +8,7 @@ All notable changes to this project are documented here, following
 ### Changed
 
 - **Releases:** the packages are published from a tag workflow with npm Trusted Publishing (provenance, no stored token), after approval in the `npm` environment.
+- **Project page:** the start page now carries a release teaser and an FAQ (theme 0.11.1).
 
 ## [0.5.0] - 2026-10-26
 
