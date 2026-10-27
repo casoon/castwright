@@ -1,5 +1,13 @@
 # @casoon/castwright
 
+## 0.5.1
+
+### Patch Changes
+
+- 9bb98b8: Published from a tag workflow with npm Trusted Publishing: the packages carry provenance and no longer depend on a maintainer's machine.
+- Updated dependencies [9bb98b8]
+  - @casoon/castwright-player@0.5.1
+
 ## 0.5.0
 
 ### Minor Changes
