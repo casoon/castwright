@@ -1,5 +1,12 @@
 # @casoon/castwright
 
+## 0.5.2
+
+### Patch Changes
+
+- c0d7dde: A closing `wait:` now holds the final screen: the compiled cast ends with an empty output event at the end of the wait, so the player, the SVG, GIF and MP4 exports all keep the last screen up for that long before the loop hold starts.
+- @casoon/castwright-player@0.5.2
+
 ## 0.5.1
 
 ### Patch Changes
