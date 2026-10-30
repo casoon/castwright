@@ -64,6 +64,19 @@ describe('compile — wait', () => {
     );
     expect(cast.events).toEqual([[0.3, 'o', '\r\n']]);
   });
+
+  it('marks the end of a closing wait with an empty output event', () => {
+    const cast = compile(
+      script([
+        { kind: 'key', key: 'enter', pause: 100 },
+        { kind: 'wait', ms: 2000 },
+      ]),
+    );
+    expect(cast.events).toEqual([
+      [0, 'o', '\r\n'],
+      [2.1, 'o', ''],
+    ]);
+  });
 });
 
 describe('compile — key', () => {

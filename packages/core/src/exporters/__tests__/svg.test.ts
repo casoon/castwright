@@ -101,6 +101,23 @@ describe('renderSvg', () => {
     );
   });
 
+  it('holds the final screen until the end of a closing wait', async () => {
+    const cast: Cast = {
+      header: header(),
+      events: [
+        [0.5, 'o', 'a'],
+        [1, 'o', 'b'],
+        [4, 'o', ''],
+      ],
+    };
+    // 4 s of demo plus 1 s of loop hold; the opening and the reduced-motion
+    // pause still sit on the final screen, from 1 s on.
+    const svg = await renderSvg(cast, { loopDelay: 1000 });
+    expect(svg).toContain('animation-duration:5s;');
+    expect(svg).toContain('animation-delay:-1.01s}');
+    expect(svg).toContain('animation-play-state:paused;animation-delay:-3s}');
+  });
+
   it('keeps the previous screen up instead of showing a blank one after a clear', async () => {
     const svg = await renderSvg(
       {
