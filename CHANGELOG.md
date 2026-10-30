@@ -5,9 +5,10 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-10-30
+
 ### Changed
 
-- **Releases:** the packages are published from a tag workflow with npm Trusted Publishing (provenance, no stored token), after approval in the `npm` environment.
 - **Project page:** the start page now carries a release teaser and an FAQ (theme 0.11.1).
 
 ### Fixed
@@ -15,6 +16,12 @@ All notable changes to this project are documented here, following
 - **Compiler:** a closing `wait:` holds the final screen in the player and in the SVG, GIF and
   MP4 exports, before the loop hold; it used to be dropped.
   Details: [Player reference](https://casoon.github.io/castwright/docs/reference/player/).
+
+## [0.5.1] - 2026-10-27
+
+### Changed
+
+- **Releases:** the packages are published from a tag workflow with npm Trusted Publishing (provenance, no stored token), after approval in the `npm` environment.
 
 ## [0.5.0] - 2026-10-26
 
