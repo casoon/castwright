@@ -374,7 +374,14 @@ export async function renderSvg(cast: Cast, options: SvgOptions = {}): Promise<s
   const title = cast.header.title;
 
   const last = frames[frames.length - 1];
-  const total = (last?.time ?? 0) + loopDelay / 1000;
+  // The cast ends at its last event, not at its last change: a closing `wait`
+  // compiles to an empty event, and the final screen holds until then.
+  const castEnd = cast.events.reduce(
+    (end, [time, type]) => (type === 'o' || type === 'r' ? Math.max(end, time) : end),
+    0,
+  );
+  const end = Math.max(last?.time ?? 0, castEnd);
+  const total = end + loopDelay / 1000;
   const animated = frames.length > 1 && total > 0;
 
   // Timelines follow buffer lines, not screen rows, the way a terminal does:
@@ -505,13 +512,13 @@ export async function renderSvg(cast: Cast, options: SvgOptions = {}): Promise<s
   if (animation !== '') {
     // Reduced motion shows the finished screen: every timeline paused at the
     // same instant inside the final hold.
-    const hold = (last?.time ?? 0) + (total - (last?.time ?? 0)) / 2;
+    const lastChange = last?.time ?? 0;
+    const hold = lastChange + (total - lastChange) / 2;
     // Opening on the final screen: a negative delay starts every timeline in
     // the final hold — just past its first keyframe, which `pct` may have
     // rounded up a little.
-    const end = last?.time ?? 0;
-    const finalAt = Math.min(hold, Math.ceil((end + total / 100_000) * 100) / 100);
-    const start = startOnFinal && total > end ? `;animation-delay:-${num(finalAt)}s` : '';
+    const finalAt = Math.min(hold, Math.ceil((lastChange + total / 100_000) * 100) / 100);
+    const start = startOnFinal && total > lastChange ? `;animation-delay:-${num(finalAt)}s` : '';
     animation =
       `.a{animation-duration:${num(total)}s;animation-timing-function:steps(1,end);animation-iteration-count:infinite${start}}` +
       animation +

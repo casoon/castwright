@@ -37,6 +37,11 @@ class Ctx {
     this.events.push([this.timeSeconds(), 'o', text.replace(BARE_LF, '\r\n')]);
   }
 
+  /** An empty output event at the current time — the end of a closing `wait`. */
+  pushEnd(): void {
+    this.events.push([this.timeSeconds(), 'o', '']);
+  }
+
   pushMarker(label: string): void {
     this.events.push([this.timeSeconds(), 'm', label]);
   }
@@ -140,6 +145,11 @@ export function compile(script: Script): Cast {
     // field (it IS the pause), so this only reads step.pause for the other kinds.
     if (step.kind !== 'wait') ctx.advance(step.pause);
   }
+  // A closing `wait` emits nothing, so without a byte at its end the cast
+  // would stop at the last output and the hold would be lost. An empty output
+  // event marks where the demo ends; players and exporters hold the last
+  // screen until then.
+  if (script.steps.at(-1)?.kind === 'wait') ctx.pushEnd();
 
   const header: CastHeader = {
     version: 2,

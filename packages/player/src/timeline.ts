@@ -22,10 +22,10 @@ export interface Timeline {
   /** asciicast `r` events, in order. Empty for anything castwright compiled. */
   resizes: ResizeEvent[];
   /**
-   * The last output event's time. Note this is *not* the authored script's total
-   * length: a demo ending in `wait: 2000` has no event during that wait, so the
-   * trailing pause is not represented in the cast at all. The player's own
-   * loop hold covers the tail — see docs/reference/player.md.
+   * The last output event's time. A demo ending in `wait: 2000` ends in an
+   * empty output event, so this includes that wait; a pause after any other
+   * last step is not in the cast, and the player's own loop hold covers the
+   * tail — see docs/reference/player.md.
    */
   durationMs: number;
 }

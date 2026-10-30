@@ -54,7 +54,7 @@ Three options apply to `svg` only:
 | Option | Effect |
 |---|---|
 | `--no-chrome` | Drops the window title bar with the traffic lights. |
-| `--loop-delay <ms>` | How long the finished screen holds before the loop restarts. Default 2000. |
+| `--loop-delay <ms>` | How long the finished screen holds before the loop restarts, on top of a closing `wait:`. Default 2000. |
 | `--start final\|beginning` | Where the first pass starts. `final` (default) opens on the finished screen; `beginning` opens on the empty terminal. |
 
 Size grows with the length of the demo, at roughly 2 KB per second of typing and output

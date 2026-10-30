@@ -97,12 +97,13 @@ keeps them available to assistive technology. Call it on an element you own.
 | `restart()` | Reset the terminal and return to `idle`. Does not start playing. |
 | `seek(seconds)` | Replay up to that moment. Clamped to the duration. |
 | `state` | `'idle' \| 'playing' \| 'paused' \| 'finished'` |
-| `durationSeconds` | The last output event's time, not the authored length. |
+| `durationSeconds` | The last output event's time, including a closing `wait:`. |
 | `destroy()` | Cancel timers, disconnect observers, dispose the terminal. |
 
-`durationSeconds` is the time of the last byte. A demo that ends in `wait: 2000` has no
-event during that wait, so the trailing pause is not part of the cast at all — the loop
-hold covers it.
+`durationSeconds` is the time of the last output event. A demo that ends in `wait: 2000`
+compiles to an empty output event at the end of that wait, so the final screen holds for
+those two seconds and then for the loop hold. A pause after any other last step is not
+part of the cast; the loop hold covers it.
 
 Seeking is a replay rather than a skip: terminal state is cumulative, so jumping to a
 moment means re-feeding every byte up to it with the timing suppressed. Starting to write
