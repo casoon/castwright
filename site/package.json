@@ -17,13 +17,13 @@
     "@casoon/castwright-player": "workspace:*",
     "@casoon/chartlet": "^0.21.0",
     "@casoon/pages-theme": "file:./vendor/pages-theme",
-    "astro": "^7.3.2"
+    "astro": "^7.4.4"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.10",
-    "@axe-core/playwright": "^4.13.0",
-    "@playwright/test": "^1.63.0",
-    "@types/node": "^24.13.4",
+    "@astrojs/check": "^0.9.12",
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.19.2",
     "typescript": "^6.0.3"
   },
   "pnpm": {

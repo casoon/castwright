@@ -30,8 +30,8 @@
     "@casoon/castwright": "workspace:*",
     "@casoon/castwright-player": "workspace:*",
     "@changesets/cli": "^3.0.3",
-    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/coverage-v8": "^4.1.12",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.12"
   }
 }

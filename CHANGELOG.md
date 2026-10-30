@@ -5,6 +5,10 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Security
+
+- **Dependencies:** development and build dependencies updated to clear all `pnpm audit` advisories (Vitest 4, happy-dom 21, Vite 7.3.7, Astro 7.4.4 and their transitive packages); the published packages' runtime dependencies are unchanged.
+
 ## [0.5.2] - 2026-10-30
 
 ### Changed
