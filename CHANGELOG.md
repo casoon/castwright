@@ -7,7 +7,7 @@ All notable changes to this project are documented here, following
 
 ### Changed
 
-- **Pages:** the project site uses the current shared theme (0.12.5).
+- **Pages:** the project site uses the current shared theme (0.12.6).
 
 ### Security
 
