@@ -5,6 +5,8 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-08
+
 ### Breaking
 
 - **show:** a `show:` file must live inside the project root (the working directory, or Vite's `root`); a path outside it is an error unless `--allow-show-outside-root` or the plugin option `allowShowOutsideRoot` is set. Shown text also gets the secret and home-directory warnings that `exec:` output has.
