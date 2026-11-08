@@ -163,6 +163,11 @@ steps:
 The command is taken literally — no colour markup, since `{…}` is common in shell
 commands. `speed`, `prompt` and `pause` work as they do for `run`.
 
+**Not supported on Windows.** `exec` needs a POSIX shell (`/bin/sh`) and node-pty, so on
+Windows a build that reaches an `exec` step stops with an error saying so. Record the demo
+on macOS or Linux (see below) — a recorded file has no `exec` left and builds on every
+platform.
+
 **Nothing runs unless you allow it:** `castwright build --allow-exec`, `castwright dev
 --allow-exec`, or `castwright({ allowExec: true })` in the Vite plugin. Without it a file
 containing `exec` fails to build, pointing at the step. A demo file is not a script

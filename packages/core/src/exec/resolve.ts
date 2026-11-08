@@ -60,6 +60,13 @@ function stepError(step: ExecStep, file: string, message: string): CastwrightPar
 }
 
 async function loadPty(step: ExecStep, file: string): Promise<Pty> {
+  if (process.platform === 'win32') {
+    throw stepError(
+      step,
+      file,
+      "step 'exec' is not supported on Windows: it runs commands with /bin/sh in a pseudo-terminal. Record the demo on macOS or Linux (castwright build --allow-exec --record) and build the recorded file anywhere",
+    );
+  }
   try {
     const module = await import('node-pty');
     return ((module as { default?: Pty }).default ?? module) as Pty;

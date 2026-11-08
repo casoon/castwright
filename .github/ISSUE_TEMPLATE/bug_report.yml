@@ -1,0 +1,49 @@
+name: Bug report
+description: Something does not build, validate or play as documented.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: spec
+    attributes:
+      label: The demo file
+      description: The smallest `.terminal.yaml` (or `.tape`) that shows the problem.
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and output
+      description: What you ran (`castwright build …`, Vite or Astro build) and the full error.
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: castwright version
+      description: Output of `pnpm list @casoon/castwright` or the version in your lockfile.
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      description: Output of `node -v`.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: For example macOS 15, Ubuntu 24.04, Windows 11.
+    validations:
+      required: true
+  - type: input
+    id: tooling
+    attributes:
+      label: Vite / Astro version (if used)

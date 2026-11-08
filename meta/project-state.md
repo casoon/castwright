@@ -17,7 +17,8 @@ the exporters.
 
 ## Current state of this repository
 
-**Released: 0.4.0 on npm** (all three packages, fixed versioning). The whole path works
+**Released on npm** (all three packages, fixed versioning; the current version is in
+`CHANGELOG.md`). The whole path works
 end to end: a `*.terminal.yaml` — or a VHS `.tape` — compiles to asciicast, and
 `<castwright-demo>` plays it as a real terminal in a browser, or the CLI exports it as
 SVG, GIF or MP4. On top of V1: the `show:` and `exec:` steps and `.tape` input, which
@@ -33,7 +34,7 @@ https://casoon.github.io/castwright/.
 | `docs/` | The public documentation, rendered by the site at `/docs/`. |
 | `site/` | The project page, built from the shared CASOON Pages theme: start page, docs, showcase, live demo, changelog. See `site/README.md`. |
 | `examples/` | `*.terminal.yaml` files as the parser's and compiler's test corpus, plus `examples/astro` and `examples/vite` — two consumer projects built in CI that assert the parser never reaches the browser. |
-| `scripts/` | Repository-level checks that cannot run inside the workspace: asciicast compatibility and the tarball smoke test. |
+| `scripts/` | Repository-level scripts that cannot run inside the workspace: asciicast compatibility (`asciicast-compat-test.mjs`), the tarball smoke test (`pack-smoke-test.mjs`), the node-pty helper fix (`fix-node-pty-helper.mjs`) and the README asset generator (`readme-assets.mjs`). |
 
 See [architecture.md](architecture.md) for how the pieces fit together.
 
@@ -50,10 +51,12 @@ All of this is in place (see [decisions.md](decisions.md) for the reasoning):
 - **License:** MIT
 - **Tooling:** Biome (lint + format), Vitest (`test.projects` across packages),
   TypeScript project references, Changesets with fixed versioning across the three
-  packages, GitHub Actions CI (typecheck → lint → test → build → packaging, plus
-  separate jobs for asciicast compatibility and for Playwright + axe against the built
-  docs site), a Changesets workflow that opens the version PR, and a Pages workflow that
-  deploys the project page on every push to `main`. Publishing is deliberately manual. The workspace root also carries
+  packages, GitHub Actions CI (typecheck → lint → test → build → packaging on Node 22 and 24, plus
+  separate jobs for asciicast compatibility, a Windows/macOS build-and-validate, and the
+  Playwright player tests; the axe check of the site is local only, see `site/README.md`),
+  a Changesets workflow that opens the version PR, a tag-triggered publish workflow (npm
+  Trusted Publishing after approval, then a GitHub Release — see conventions.md), and a
+  Pages workflow that deploys the project page on every push to `main`. The workspace root also carries
   `devDependencies` on `@casoon/castwright` and `@casoon/castwright-player` — the only
   exception to "root has no functional code" — solely so `pnpm exec castwright ...`
   and `castwright dev` work from the repo root; this is what the plan's own acceptance
