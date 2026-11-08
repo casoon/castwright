@@ -147,32 +147,3 @@ describe('replay', () => {
     expect(calls).toEqual(['before', 'after']);
   });
 });
-
-describe('buildTimeline — idle_time_limit', () => {
-  it('clamps gaps longer than the limit, for every event code', () => {
-    const cast = {
-      header: { version: 2, width: 80, height: 24, idle_time_limit: 1 },
-      events: [
-        [0, 'o', 'a'],
-        [600, 'm', 'mark'],
-        [600.5, 'o', 'b'],
-        [1200.5, 'o', 'c'],
-      ],
-    } as unknown as Cast;
-    const timeline = buildTimeline(cast);
-    expect(timeline.output.map((e) => e.timeMs)).toEqual([0, 1500, 2500]);
-    expect(timeline.markers[0]?.timeMs).toBe(1000);
-    expect(timeline.durationMs).toBe(2500);
-  });
-
-  it('leaves times alone without a limit', () => {
-    const cast: Cast = {
-      header: { version: 2, width: 80, height: 24 },
-      events: [
-        [0, 'o', 'a'],
-        [600, 'o', 'b'],
-      ],
-    };
-    expect(buildTimeline(cast).durationMs).toBe(600_000);
-  });
-});

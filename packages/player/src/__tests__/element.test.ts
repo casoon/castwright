@@ -140,24 +140,6 @@ describe('<castwright-demo> — lazy init', () => {
     expect(el.player?.state).toBe('playing');
   });
 
-  it('cancels a pending loop restart when scrolled out during the final-frame hold', async () => {
-    const observed = installFakeIntersectionObserver();
-    const el = element();
-    el.setAttribute('loop', '');
-    el.innerHTML = `<script type="application/json" data-castwright-cast>${castJson}</script>`;
-    document.body.appendChild(el);
-
-    observed[0]?.trigger(true);
-    await vi.waitFor(() => expect(handles).toHaveLength(1));
-    (handles[0] as { state: string }).state = 'finished';
-
-    observed[0]?.trigger(false);
-    expect(el.player?.state).toBe('paused');
-
-    observed[0]?.trigger(true);
-    expect(el.player?.state).toBe('playing');
-  });
-
   it('mounts immediately where IntersectionObserver does not exist', async () => {
     vi.stubGlobal('IntersectionObserver', undefined);
     const el = element();
@@ -376,101 +358,5 @@ describe('<castwright-demo> — removed and re-inserted', () => {
 
     release[1]?.(castNdjson);
     await vi.waitFor(() => expect(mount).toHaveBeenCalledOnce());
-  });
-});
-
-describe('<castwright-demo> — reactive configuration', () => {
-  it('rebuilds the player when src changes after mount', async () => {
-    vi.stubGlobal('IntersectionObserver', undefined);
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({ ok: true, status: 200, text: async () => castNdjson })),
-    );
-    const el = element();
-    el.setAttribute('src', '/a.cast');
-    document.body.appendChild(el);
-    await vi.waitFor(() => expect(mount).toHaveBeenCalledTimes(1));
-
-    el.setAttribute('src', '/b.cast');
-    await vi.waitFor(() => expect(mount).toHaveBeenCalledTimes(2));
-    expect(fetch).toHaveBeenLastCalledWith('/b.cast', { signal: expect.any(AbortSignal) });
-  });
-
-  it('rebuilds the player when cast is set after mount', async () => {
-    vi.stubGlobal('IntersectionObserver', undefined);
-    const el = element();
-    el.cast = cast;
-    document.body.appendChild(el);
-    await vi.waitFor(() => expect(mount).toHaveBeenCalledTimes(1));
-
-    const next = { ...cast, events: [[0, 'o', 'other'] as [number, 'o', string]] };
-    el.cast = next;
-    await vi.waitFor(() => expect(mount).toHaveBeenCalledTimes(2));
-    expect(vi.mocked(mount).mock.calls[1]?.[1]).toBe(next);
-  });
-
-  it('does nothing for attribute changes before the first mount', async () => {
-    const observed = installFakeIntersectionObserver();
-    const el = element();
-    el.innerHTML = `<script type="application/json" data-castwright-cast>${castJson}</script>`;
-    document.body.appendChild(el);
-    el.setAttribute('loop', '');
-    expect(mount).not.toHaveBeenCalled();
-
-    observed[0]?.trigger(true);
-    await vi.waitFor(() => expect(mount).toHaveBeenCalledOnce());
-    expect(vi.mocked(mount).mock.calls[0]?.[2]?.loop).toBe(true);
-  });
-});
-
-describe('<castwright-demo> — events and marker posters', () => {
-  it('dispatches castwright:ready with the player already available', async () => {
-    vi.stubGlobal('IntersectionObserver', undefined);
-    const el = element();
-    el.cast = cast;
-    let playerAtReady: unknown;
-    el.addEventListener('castwright:ready', () => {
-      playerAtReady = el.player;
-    });
-    document.body.appendChild(el);
-    await vi.waitFor(() => expect(playerAtReady).toBeDefined());
-  });
-
-  it('dispatches castwright:error when the cast cannot load', async () => {
-    vi.stubGlobal('IntersectionObserver', undefined);
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    const el = element();
-    const onError = vi.fn();
-    el.addEventListener('castwright:error', onError);
-    document.body.appendChild(el);
-    await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce());
-  });
-
-  it('resolves poster="marker:<label>" to the marker time', async () => {
-    vi.stubGlobal('IntersectionObserver', undefined);
-    const el = element();
-    el.setAttribute('poster', 'marker:intro');
-    el.cast = {
-      header: cast.header,
-      events: [
-        [0, 'o', 'a'],
-        [1.25, 'm', 'intro'],
-      ],
-    };
-    document.body.appendChild(el);
-    await vi.waitFor(() => expect(mount).toHaveBeenCalledOnce());
-    expect(vi.mocked(mount).mock.calls[0]?.[2]?.poster).toBe(1.25);
-  });
-
-  it('warns and ignores an unknown marker label', async () => {
-    vi.stubGlobal('IntersectionObserver', undefined);
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const el = element();
-    el.setAttribute('poster', 'marker:nope');
-    el.cast = cast;
-    document.body.appendChild(el);
-    await vi.waitFor(() => expect(mount).toHaveBeenCalledOnce());
-    expect(vi.mocked(mount).mock.calls[0]?.[2]?.poster).toBeUndefined();
-    expect(warn).toHaveBeenCalled();
   });
 });

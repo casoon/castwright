@@ -15,10 +15,8 @@ import { createXtermTerminal } from './xterm-adapter.js';
 
 const DEFAULT_LOOP_DELAY_MS = 2000;
 
-const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-
 function prefersReducedMotion(win: Window): boolean {
-  return win.matchMedia?.(REDUCED_MOTION_QUERY).matches ?? false;
+  return win.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }
 
 export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}): PlayerHandle {
@@ -26,18 +24,6 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
   const win = doc.defaultView ?? globalThis.window;
 
   injectStyles(doc);
-
-  // What mount() overwrites on the host, so destroy() can put it back. Notably
-  // --castwright-reserved-height: the Astro component sets it inline, and a
-  // re-inserted element must not lose its pre-hydration reservation.
-  const savedAttrs = ['role', 'aria-label', 'data-chrome', 'data-controls'].map(
-    (name) => [name, host.getAttribute(name)] as const,
-  );
-  const savedStyles = [
-    '--castwright-cast-bg',
-    '--castwright-natural-width',
-    '--castwright-reserved-height',
-  ].map((name) => [name, host.style.getPropertyValue(name)] as const);
 
   const timeline = buildTimeline(cast);
   const durationMs = timeline.durationMs;
@@ -88,12 +74,10 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     options.label ?? (title ? `Terminal demo: ${title}` : 'Terminal demo'),
   );
 
-  const initialCols = options.cols ?? cast.header.width;
-  const initialRows = options.rows ?? cast.header.height;
   const createTerminal = options.createTerminal ?? createXtermTerminal;
   const terminal: TerminalAdapter = createTerminal({
-    cols: initialCols,
-    rows: initialRows,
+    cols: options.cols ?? cast.header.width,
+    rows: options.rows ?? cast.header.height,
     ...(cast.header.theme ? { theme: cast.header.theme } : {}),
   });
   terminal.open(chrome.scaler);
@@ -114,22 +98,6 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(() => fit());
   resizeObserver?.observe(host);
 
-  // What replay writes into: an asciicast `r` event resizes the terminal, and
-  // the scale has to follow or the frame keeps the previous size's geometry.
-  const sink = {
-    write: (data: string) => terminal.write(data),
-    resize: (cols: number, rows: number) => {
-      terminal.resize?.(cols, rows);
-      fitToWidth(host, chrome.screen, chrome.scaler);
-    },
-  };
-
-  /** RIS does not change the geometry, so undo any `r` event's resize too. */
-  function resetTerminal(): void {
-    terminal.reset();
-    sink.resize(initialCols, initialRows);
-  }
-
   let state: PlayerState = 'idle';
   let elapsedMs = 0;
   let cursor: ReplayCursor = { index: 0, resizeIndex: 0 };
@@ -137,36 +105,12 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
   let loopTimer: ReturnType<typeof setTimeout> | undefined;
   let startedAt = 0;
   let destroyed = false;
-  let announcedSecond = -1;
-
-  chrome.progress.setAttribute('aria-valuemax', String(Math.floor(durationMs / 1000)));
-
-  /** DOM events on the host, so integrations need not poll `.player`. */
-  function emit(name: string): void {
-    host.dispatchEvent(
-      new win.CustomEvent(`castwright:${name}`, {
-        bubbles: true,
-        detail: { time: elapsedMs / 1000 },
-      }),
-    );
-  }
 
   function render(): void {
     if (controls === 'none') return;
     const ratio = durationMs === 0 ? 1 : Math.min(1, elapsedMs / durationMs);
     chrome.progressBar.style.width = `${(ratio * 100).toFixed(2)}%`;
     chrome.time.textContent = `${formatClock(elapsedMs / 1000)} / ${formatClock(durationMs / 1000)}`;
-    // Whole seconds only: a slider changing 60 times a second would flood
-    // assistive technology.
-    const second = Math.floor(elapsedMs / 1000);
-    if (second !== announcedSecond) {
-      announcedSecond = second;
-      chrome.progress.setAttribute('aria-valuenow', String(second));
-      chrome.progress.setAttribute(
-        'aria-valuetext',
-        `${formatClock(elapsedMs / 1000)} of ${formatClock(durationMs / 1000)}`,
-      );
-    }
     const playing = state === 'playing';
     chrome.playPause.textContent = playing ? '⏸' : '▶';
     chrome.playPause.setAttribute('aria-label', playing ? 'Pause' : 'Play');
@@ -190,7 +134,6 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     state = 'finished';
     cancelFrame();
     render();
-    emit('ended');
     if (options.loop && !destroyed) {
       loopTimer = setTimeout(() => {
         loopTimer = undefined;
@@ -203,9 +146,9 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
 
   function tick(): void {
     if (destroyed || state !== 'playing') return;
-    elapsedMs = performance.now() - startedAt;
+    elapsedMs = Date.now() - startedAt;
 
-    cursor = replay(timeline, cursor, elapsedMs, sink);
+    cursor = replay(timeline, cursor, elapsedMs, terminal);
 
     if (cursor.index >= timeline.output.length && elapsedMs >= durationMs) {
       elapsedMs = durationMs;
@@ -221,30 +164,24 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     if (destroyed || state === 'playing') return;
     clearLoopTimer();
     if (state === 'finished') restart();
-    startedAt = performance.now() - elapsedMs;
+    startedAt = Date.now() - elapsedMs;
     state = 'playing';
     render();
     rafId = win.requestAnimationFrame(tick);
-    emit('play');
   }
 
   function pause(): void {
-    if (destroyed) return;
-    // Finished with a loop pending: pausing cancels the hold timer, so a demo
-    // that scrolled away during the hold does not restart off-screen.
-    if (state === 'finished') clearLoopTimer();
-    if (state !== 'playing') return;
+    if (destroyed || state !== 'playing') return;
     cancelFrame();
     state = 'paused';
     render();
-    emit('pause');
   }
 
   function restart(): void {
     if (destroyed) return;
     cancelFrame();
     clearLoopTimer();
-    resetTerminal();
+    terminal.reset();
     elapsedMs = 0;
     cursor = { index: 0, resizeIndex: 0 };
     state = 'idle';
@@ -258,8 +195,8 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     const wasPlaying = state === 'playing';
     cancelFrame();
     clearLoopTimer();
-    resetTerminal();
-    cursor = replay(timeline, { index: 0, resizeIndex: 0 }, targetMs, sink);
+    terminal.reset();
+    cursor = replay(timeline, { index: 0, resizeIndex: 0 }, targetMs, terminal);
     elapsedMs = targetMs;
     state = wasPlaying ? 'paused' : state === 'finished' ? 'paused' : state;
     render();
@@ -267,10 +204,8 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
   }
 
   function showFinalFrame(): void {
-    cancelFrame();
-    clearLoopTimer();
-    resetTerminal();
-    cursor = replay(timeline, { index: 0, resizeIndex: 0 }, durationMs, sink);
+    terminal.reset();
+    cursor = replay(timeline, { index: 0, resizeIndex: 0 }, durationMs, terminal);
     elapsedMs = durationMs;
     state = 'finished';
     render();
@@ -284,79 +219,6 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     restart();
     play();
   });
-
-  const SEEK_STEP_SECONDS = 5;
-  chrome.progress.addEventListener('click', (event) => {
-    const rect = chrome.progress.getBoundingClientRect();
-    if (rect.width === 0) return;
-    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
-    seek(ratio * (durationMs / 1000));
-  });
-
-  // Shortcuts apply only while focus is inside the demo, so they never capture
-  // keys page-wide (WCAG 2.1.4) and, being ordinary keydowns, trap nothing: Tab
-  // still leaves. Space is left to the buttons, which already handle it.
-  const onKeydown = (event: KeyboardEvent) => {
-    if (destroyed || event.defaultPrevented) return;
-    if (event.ctrlKey || event.metaKey || event.altKey) return;
-    const target = event.target as Element | null;
-    const onSlider = target === chrome.progress;
-    const nowSeconds = elapsedMs / 1000;
-    switch (event.key) {
-      case ' ':
-      case 'k':
-        if (event.key === ' ' && !onSlider) return;
-        if (state === 'playing') pause();
-        else play();
-        break;
-      case 'ArrowLeft':
-        seek(nowSeconds - SEEK_STEP_SECONDS);
-        break;
-      case 'ArrowRight':
-        seek(nowSeconds + SEEK_STEP_SECONDS);
-        break;
-      case 'Home':
-        seek(0);
-        break;
-      case 'End':
-        seek(durationMs / 1000);
-        break;
-      default:
-        return;
-    }
-    event.preventDefault();
-  };
-  if (controls !== 'none') host.addEventListener('keydown', onKeydown);
-
-  // rAF stops in a hidden tab but the clock does not, so on return every missed
-  // event would land in one frame. Pause while hidden and resume on return; a
-  // loop hold is cancelled too, or its timer would restart the demo unseen.
-  let resumeOnShow = false;
-  const onVisibilityChange = () => {
-    if (destroyed) return;
-    if (doc.hidden) {
-      if (state === 'playing' || (state === 'finished' && loopTimer !== undefined)) {
-        resumeOnShow = true;
-        pause();
-      }
-    } else if (resumeOnShow) {
-      resumeOnShow = false;
-      play();
-    }
-  };
-  doc.addEventListener('visibilitychange', onVisibilityChange);
-
-  // Reduced motion switched on while the demo is running: stop animating and
-  // show the end state, as if it had been on at load. An explicit
-  // `reducedMotion` option pins the mode, so the query is not consulted.
-  const motionQuery =
-    options.reducedMotion === undefined ? win.matchMedia?.(REDUCED_MOTION_QUERY) : undefined;
-  const onMotionChange = (event: MediaQueryListEvent) => {
-    if (!event.matches || destroyed) return;
-    resumeOnShow = false;
-    showFinalFrame();
-  };
-  motionQuery?.addEventListener?.('change', onMotionChange);
 
   if (reduced) {
     // No animation: the end state immediately. Controls stay usable for anyone
@@ -387,17 +249,6 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
       cancelFrame();
       clearLoopTimer();
       resizeObserver?.disconnect();
-      motionQuery?.removeEventListener?.('change', onMotionChange);
-      doc.removeEventListener('visibilitychange', onVisibilityChange);
-      host.removeEventListener('keydown', onKeydown);
-      for (const [name, value] of savedAttrs) {
-        if (value === null) host.removeAttribute(name);
-        else host.setAttribute(name, value);
-      }
-      for (const [name, value] of savedStyles) {
-        if (value === '') host.style.removeProperty(name);
-        else host.style.setProperty(name, value);
-      }
       terminal.dispose();
     },
   };

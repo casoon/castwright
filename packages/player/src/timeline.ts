@@ -53,17 +53,8 @@ export function buildTimeline(cast: Cast): Timeline {
   const markers: TimelineEvent[] = [];
   const resizes: ResizeEvent[] = [];
 
-  // asciicast `idle_time_limit`: a gap longer than this plays as the limit, so
-  // a recording with a ten-minute pause does not make a ten-minute demo.
-  const idleLimit = (cast.header as { idle_time_limit?: unknown }).idle_time_limit;
-  const limit = typeof idleLimit === 'number' && idleLimit > 0 ? idleLimit : undefined;
-  let previous = 0;
-  let clock = 0;
-
   for (const event of cast.events) {
-    clock += limit === undefined ? event[0] - previous : Math.min(limit, event[0] - previous);
-    previous = event[0];
-    const timeMs = Math.round((limit === undefined ? event[0] : clock) * 1000);
+    const timeMs = Math.round(event[0] * 1000);
     switch (event[1]) {
       case 'o':
         output.push({ timeMs, data: event[2] });
