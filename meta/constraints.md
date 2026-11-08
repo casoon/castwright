@@ -18,6 +18,28 @@ wall-clock timestamps, unseeded randomness, and locale-dependent number or strin
 formatting in the compile path. The asciicast header's `timestamp` field is therefore
 omitted or fixed, never set from `Date.now()`.
 
+Typing is segmented into grapheme clusters with `Intl.Segmenter`
+(`compiler/graphemes.ts`), so the byte-identical guarantee is per Node/ICU version: an
+upgrade that brings a newer Unicode table can split new emoji sequences differently and
+change the `.cast` bytes of demos that contain them. ASCII and long-established scripts
+are unaffected. CI runs Node 22 and 24; a demo checked in as `.cast` is not rebuilt by
+consumers, so this only matters when regenerating.
+
+## Platforms
+
+`build` and `validate` run on Linux, macOS and Windows (CI builds and validates on all
+three). `exec:` steps need `/bin/sh` and node-pty and are **not supported on Windows**;
+`--record` them elsewhere and build the recorded file anywhere.
+
+## Peer ranges
+
+CI builds `examples/vite` with Vite 7 and `examples/astro` with Astro 7, which itself
+resolves Vite 8 (Rolldown) — so the Vite plugin's client-side guarantees are exercised on
+both majors, through different hosts. Vite 5/6 and Astro 5/6 stay in the peer ranges of
+`@casoon/castwright` (`vite`) and `@casoon/astro-castwright` (`astro`) but are untested.
+Adding a dedicated Vite 8 example would cost a second example build for little the Astro
+build does not already show; narrowing the ranges to what CI builds is the alternative.
+
 ## Browser support
 
 The web player targets **evergreen browsers** (last two versions of Chrome, Firefox,

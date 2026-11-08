@@ -86,6 +86,12 @@ Versioning and publishing are automated; the publish needs one approval. Pushing
 `main` with pending changesets opens a "Version Packages" pull request; merging it bumps
 the versions and writes the changelogs. Then tag the merge commit:
 
+Before tagging, move the root `CHANGELOG.md` along (Changesets only writes the
+per-package changelogs): in the "Version Packages" PR, or right after it, turn
+`## [Unreleased]` into `## [X.Y.Z] - YYYY-MM-DD` with a new empty `## [Unreleased]` above
+it, and run the `keep-a-changelog` check (`--release X.Y.Z`). `publish.yml` refuses a tag
+without that dated section.
+
 ```bash
 git switch main && git pull
 git tag vX.Y.Z && git push origin vX.Y.Z
@@ -95,7 +101,14 @@ The tag starts `.github/workflows/publish.yml`: it runs the tests (including `te
 and `test:compat`), then waits for approval in the `npm` environment (Required Reviewer)
 and publishes the three packages through npm Trusted Publishing — no token, provenance
 attached. Never run `npm publish` from a machine; a package published there carries no
-provenance. The tag has to match the package versions, or the workflow stops.
+provenance. The tag has to match the package versions, or the workflow stops. After the publish, the
+same workflow creates the GitHub Release with that CHANGELOG section as its notes.
+
+The "Version Packages" PR is opened by `release.yml` with the `GITHUB_TOKEN`, and pushes
+made with it do not trigger `pull_request` workflows — so that PR gets no CI run. That is
+accepted: the PR only touches versions and changelogs, and `publish.yml` re-runs the tests,
+`test:pack` and `test:compat` on the tag before anything is published. (An App token
+would lift it; it is not worth a secret for this.)
 
 ## Commits
 

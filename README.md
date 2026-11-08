@@ -200,7 +200,7 @@ The source of those pages is [`docs/`](docs/); the site that renders them is
 
 ## Status
 
-0.2.0 is the first release. Everything described here works: the parser, compiler, CLI and
+Everything described here works: the parser, compiler, CLI and
 Vite plugin, the player, the Astro integration, the SVG, GIF and MP4 exporters, and the
 [`show:`](docs/reference/dsl.mdx#show) and [`exec:`](docs/reference/dsl.mdx#exec) steps for
 syntax-highlighted files and recorded real commands.

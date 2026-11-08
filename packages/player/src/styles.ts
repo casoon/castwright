@@ -128,15 +128,31 @@ export const PLAYER_CSS = `
 .castwright-progress {
   flex: 1;
   min-width: 0;
+  /* A 24px-tall hit area (WCAG 2.2 SC 2.5.8) around a 4px track. */
+  position: relative;
+  height: 24px;
+  cursor: pointer;
+}
+.castwright-progress::before,
+.castwright-progress-bar {
+  position: absolute;
+  inset-block-start: 10px;
   height: 4px;
   border-radius: 2px;
+}
+.castwright-progress::before {
+  content: "";
+  inset-inline: 0;
   background: rgb(255 255 255 / 0.15);
-  overflow: hidden;
 }
 .castwright-progress-bar {
-  height: 100%;
+  inset-inline-start: 0;
   width: 0%;
   background: var(--castwright-accent);
+}
+.castwright-progress:focus-visible {
+  outline: 2px solid var(--castwright-accent);
+  outline-offset: 2px;
 }
 
 .castwright-time { flex: none; font-variant-numeric: tabular-nums; }
@@ -184,11 +200,16 @@ castwright-demo[data-controls="hover"] .castwright-transport {
   inset-inline: 0;
   inset-block-end: 0;
   opacity: 0;
+  /* Invisible must also mean untouchable: otherwise clicks and text selection
+     on the bottom strip of the terminal hit buttons nobody can see. Keyboard
+     focus is unaffected, and :focus-within turns it back on. */
+  pointer-events: none;
   transition: opacity 150ms ease;
 }
 castwright-demo[data-controls="hover"]:hover .castwright-transport,
 castwright-demo[data-controls="hover"]:focus-within .castwright-transport {
   opacity: 1;
+  pointer-events: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

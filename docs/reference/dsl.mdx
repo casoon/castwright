@@ -45,7 +45,7 @@ steps:            # required
 | `rows` | `24` | Written to the asciicast header. |
 | `theme` | `default` | One of the seven bundled names; see [Theming](../theming/). |
 | `prompt` | `"$ "` | Supports markup, so a coloured prompt is a one-liner. |
-| `cursor` | `block` | `block`, `bar` or `underline`; a mapping adds `blink: false`. |
+| `cursor` | `block` | `block`, `bar` or `underline`; a mapping adds `blink: false`. Written to the cast as DECSCUSR at t=0, which players that support it follow; the SVG export draws the shape but does not blink. |
 
 ### defaults
 
@@ -83,7 +83,7 @@ Exactly one primary key per step.
 | `speed` | `run`, `type` | Milliseconds per character. `0` is instant. |
 | `jitter` | `run`, `type` | 0–1, varies the per-character delay. Requires a top-level `seed`. |
 | `delay` | `output`, `show` | Milliseconds between output *lines*. Default 0 — the whole block at once. |
-| `pause` | any | Milliseconds after this step. |
+| `pause` | any except `wait` | Milliseconds after this step. `wait` already is a pause, so the key is rejected there. |
 | `prompt` | `run`, `type` | `false` suppresses the prompt for that step. |
 
 <Cast name="output-delay" title="delay: output one line at a time" />
@@ -136,6 +136,17 @@ A missing file, a range past its end or an unknown language is reported with the
 line and column of the step. The Vite plugin registers the shown file as a dependency of
 the demo, so editing it recompiles the demo in dev.
 
+The shown file must live inside the project: the working directory for the CLI, Vite's
+`root` for the plugin. A path that resolves outside it (`../`, an absolute path, or a
+symlink that leads out) is an error, since a demo contributed to a repository should not be
+able to pull `~/.npmrc` into a published page. To allow it anyway, pass
+`--allow-show-outside-root` to `castwright build`, `validate` and `dev`, or
+`allowShowOutsideRoot: true` to the Vite plugin.
+
+The shown text gets the same hints as [`exec`](#exec) output: if it looks like it contains a
+token, a private key or your home directory, the build prints a warning naming the step.
+That is a heuristic, not a scanner.
+
 A compiled cast depends on the Shiki version as well as the file: the project's lockfile
 is what keeps it byte-identical from one build to the next.
 
@@ -162,6 +173,11 @@ steps:
 
 The command is taken literally — no colour markup, since `{…}` is common in shell
 commands. `speed`, `prompt` and `pause` work as they do for `run`.
+
+**Not supported on Windows.** `exec` needs a POSIX shell (`/bin/sh`) and node-pty, so on
+Windows a build that reaches an `exec` step stops with an error saying so. Record the demo
+on macOS or Linux (see below) — a recorded file has no `exec` left and builds on every
+platform.
 
 **Nothing runs unless you allow it:** `castwright build --allow-exec`, `castwright dev
 --allow-exec`, or `castwright({ allowExec: true })` in the Vite plugin. Without it a file
@@ -224,7 +240,8 @@ For pasting genuine program output that already contains escape sequences:
 ```
 
 Supports `\e`, `\n`, `\r`, `\t`, `\xNN`, `\uNNNN` and `\\`. Markup is *not* processed in
-`raw`.
+`raw`. In a double-quoted scalar YAML itself decodes the escapes, so write a literal
+backslash as `\\`; in a single-quoted or block scalar Castwright decodes them.
 
 ## Validation
 
@@ -235,7 +252,7 @@ Enforced by `castwright validate` and by every code path that parses a file:
 - `jitter > 0` without a top-level `seed` is an error.
 - Unbalanced or unknown markup tags are errors, with the offending column.
 - An unknown `terminal.theme` is an error, listing the known names.
-- An `output` line wider than `cols` is a warning, not an error.
+- An `output` line wider than `cols` terminal columns (escape sequences ignored, wide characters count twice) is a warning, not an error.
 
 Every error carries the file, the line, the column and the offending source line:
 

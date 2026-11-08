@@ -12,10 +12,12 @@
 // Both are declared as optional peer dependencies, and when one is missing this
 // says so and names the fix rather than failing inside Vite's module graph.
 
+import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join, resolve } from 'node:path';
 import { castwright } from '../vite/index.js';
 import { CliUsageError } from './errors.js';
+import { fsUsageError } from './util.js';
 
 /** The slice of Vite this uses, declared structurally so vite is never imported for types. */
 interface ViteServerLike {
@@ -68,9 +70,13 @@ export interface DevOptions {
   file: string;
   port: number;
   allowExec?: boolean;
+  allowShowOutsideRoot?: boolean;
 }
 
 export async function runDev(options: DevOptions): Promise<void> {
+  if (!existsSync(options.file)) {
+    throw fsUsageError('read', options.file, { code: 'ENOENT' });
+  }
   const vite = await importVite();
 
   // Absolute: the entry is a *virtual* module, so it has no directory of its
@@ -100,7 +106,13 @@ el.prepend(pre);
     root: dirname(file),
     server: { port: options.port },
     plugins: [
-      castwright({ allowExec: options.allowExec ?? false }),
+      castwright({
+        allowExec: options.allowExec ?? false,
+        // Vite is rooted at the file's directory, but the project is where
+        // the command was run from.
+        root: process.cwd(),
+        allowShowOutsideRoot: options.allowShowOutsideRoot ?? false,
+      }),
       {
         name: 'castwright-dev-page',
         resolveId(id: string) {

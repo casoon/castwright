@@ -196,6 +196,23 @@ describe('recordIntoSource', () => {
     expect(await screen(replay)).toBe(live);
   });
 
+  it('keeps inline comments from the exec step', async () => {
+    const source = yaml('  - exec: echo hi  # the greeting\n    pause: 250  # slow\n');
+    const executed = await resolveExecSteps(parse(source, file), file, { allowExec: true });
+    const recorded = recordIntoSource(source, executed.recordings);
+    expect(recorded).toContain('the greeting');
+    expect(recorded).toContain('slow');
+  });
+
+  it('replays output without a trailing newline on the same line as the next prompt', async () => {
+    const source = yaml('  - exec: "printf \'one\\\\ntwo\\\\nthree\'"\n  - run: echo next\n');
+    const executed = await resolveExecSteps(parse(source, file), file, { allowExec: true });
+    const recorded = recordIntoSource(source, executed.recordings);
+    const screen = (script: typeof executed.script) =>
+      finalFrameText(compile(script), { includeScrollback: true });
+    expect(await screen(parse(recorded, file))).toBe(await screen(executed.script));
+  });
+
   it('writes no output step for a command that printed nothing', async () => {
     const source = yaml("  - exec: 'true'\n    pause: 250\n  - exec: echo hi\n");
     const executed = await resolveExecSteps(parse(source, file), file, { allowExec: true });

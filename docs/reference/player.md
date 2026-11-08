@@ -16,12 +16,16 @@ server-rendered template, and in every JavaScript framework. Importing
 | `autoplay` | boolean | Start when the demo first scrolls into view. |
 | `loop` | boolean | Replay after a hold on the final frame. |
 | `loop-delay` | ms | Length of that hold. Default 2000. |
-| `poster` | seconds | Render this moment as the initial frame. |
+| `poster` | seconds, or `marker:<label>` | Render this moment as the initial frame. `marker:<label>` uses the time of the first marker event with that label. |
 | `cols`, `rows` | number | Override the cast's geometry. |
 | `label` | string | Accessible name. Defaults to `Terminal demo: <title>`. |
 | `title-text` | string | Shown in the window chrome. Decorative. |
 | `chrome` | `window`, `none` | `none` drops the title bar. |
 | `controls` | `visible`, `hover`, `none` | See below. |
+
+Changing any of these attributes, or setting `cast`, on a mounted element rebuilds the
+player with the new values (the demo restarts). Before the first mount they are simply
+read when the element scrolls into view.
 
 `title-text` rather than `title`, because a native `title` attribute would produce a
 browser tooltip and be announced by assistive technology — two names for one thing.
@@ -47,6 +51,34 @@ The YAML parser is never shipped to a browser.
 - `none` — no transport at all. Appropriate for a short demo that does not loop; the
   player warns when it is combined with autoplay on something that loops or runs past five
   seconds.
+
+## Seeking, keyboard and events
+
+The progress bar is a seek slider: click it, or focus it and use the keyboard. While focus
+is inside the demo, Left/Right seek 5 seconds, Home/End jump to the start/end, `k` toggles
+play/pause, and Space toggles on the slider. See [Accessibility](../../guides/accessibility/).
+
+The element dispatches bubbling `CustomEvent`s, so integrations need not poll `.player`:
+
+| Event | When | `detail` |
+| --- | --- | --- |
+| `castwright:ready` | The player has mounted; `.player` is set. | `{ durationSeconds }` |
+| `castwright:play` | Playback starts or resumes (also on each loop). | `{ time }` |
+| `castwright:pause` | Playback is paused — by the user, off-screen, or a hidden tab. | `{ time }` |
+| `castwright:ended` | The final frame was reached. | `{ time }` |
+| `castwright:error` | The cast could not be loaded. | `{ error }` |
+
+`play`, `pause` and `ended` are also dispatched by `mount()` on its host. A hidden browser
+tab pauses playback and resumes it on return, so missed time is not dumped into one frame.
+
+Not yet available: playback speed, marker ticks on the seek bar, a copy button.
+
+## Recordings from `asciinema rec`
+
+`src=` accepts asciicast v2 and v3 (v3 is converted to v2 when read) and honours
+`idle_time_limit`: a longer gap plays as the limit. A truncated or malformed event line is
+skipped with a console warning instead of rejecting the file. v1 and unknown versions fail
+with a clear error.
 
 ## Programmatic control
 
@@ -109,7 +141,11 @@ Seeking is a replay rather than a skip: terminal state is cumulative, so jumping
 moment means re-feeding every byte up to it with the timing suppressed. Starting to write
 from the middle would show a broken screen.
 
-Every method is a no-op after `destroy()`.
+Every method is a no-op after `destroy()`, which also restores the host's `role`,
+`aria-label`, `data-*` and `--castwright-*` values to what they were before `mount()`.
+
+If the terminal was resized by an asciicast `r` event, seeking, restarting and looping
+restore the authored size first.
 
 ## Failures, and what is not retried
 

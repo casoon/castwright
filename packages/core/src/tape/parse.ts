@@ -10,6 +10,7 @@
 // compatibility: every command is either translated, ignored on purpose, or
 // rejected with a message — never skipped silently by accident.
 
+import { graphemes } from '../compiler/graphemes.js';
 import { CastwrightParseError } from '../parser/errors.js';
 import { isThemeName, THEME_NAMES } from '../themes/index.js';
 import type { CursorConfig, KeyName, Script, Step, Styled } from '../types.js';
@@ -333,11 +334,12 @@ export function parseTape(source: string, file: string, options: TapeOptions = {
           } else if (name === 'Space') {
             type(' ', gap, line, head.column);
           } else if (name === 'Backspace') {
-            if (lineStart >= 0) lineText = lineText.slice(0, -1);
+            if (lineStart >= 0) lineText = graphemes(lineText).slice(0, -1).join('');
             emit({ kind: 'key', key: 'backspace', pause: 0 });
           } else {
             const key = KEYS[name];
             if (key === undefined) {
+              if (lineStart >= 0) lineRunnable = false;
               if (n === 0) warn(`key '${name}' is not supported and is skipped`, line, head.column);
               continue;
             }

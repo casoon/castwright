@@ -223,7 +223,7 @@ describe('compile — output', () => {
     expect(cast.events).toEqual([[0, 'o', 'a\r\nb']]);
   });
 
-  it('lineDelay: n emits one event per line, n ms apart, each ending in CRLF', () => {
+  it('lineDelay: n emits one event per line, n ms apart, newline only between lines', () => {
     const cast = compile(
       script([
         { kind: 'output', text: [{ text: 'a\nb\nc' }], lineDelay: 100, pause: 0 },
@@ -233,9 +233,19 @@ describe('compile — output', () => {
     expect(cast.events).toEqual([
       [0, 'o', 'a\r\n'],
       [0.1, 'o', 'b\r\n'],
-      [0.2, 'o', 'c\r\n'],
+      [0.2, 'o', 'c'],
       [0.3, 'o', '\r\n'],
     ]);
+  });
+
+  it('lineDelay: n writes the same bytes as lineDelay: 0, with or without a trailing newline', () => {
+    for (const text of ['a\nb', 'a\nb\n']) {
+      const bytes = (lineDelay: number) =>
+        compile(script([{ kind: 'output', text: [{ text }], lineDelay, pause: 0 }]))
+          .events.map((e) => e[2])
+          .join('');
+      expect(bytes(100)).toBe(bytes(0));
+    }
   });
 
   it('applies styling per line when splitting', () => {
@@ -251,7 +261,7 @@ describe('compile — output', () => {
     );
     expect(cast.events).toEqual([
       [0, 'o', '\x1b[32ma\x1b[0m\r\n'],
-      [0.01, 'o', '\x1b[32mb\x1b[0m\r\n'],
+      [0.01, 'o', '\x1b[32mb\x1b[0m'],
     ]);
   });
 });
@@ -306,5 +316,21 @@ describe("compile — run lowering (via the parser's two-step output)", () => {
       [0.2, 'o', '\r\n'], // enter fires instantly at t=0.2 (after typing 'l','s' @ 100ms each)
       [0.5, 'o', '\t'], // 0.2 + 0.3 (enter's pause) = 0.5 — only visible via the next step
     ]);
+  });
+});
+
+describe('compile — cursor', () => {
+  const withCursor = (cursor: Script['terminal']['cursor']) =>
+    compile(script([], { terminal: { ...TERMINAL, cursor } })).events;
+
+  it('writes nothing for the default blinking block', () => {
+    expect(withCursor({ style: 'block', blink: true })).toEqual([]);
+  });
+
+  it('emits DECSCUSR at t=0 for a configured cursor', () => {
+    expect(withCursor({ style: 'bar', blink: true })).toEqual([[0, 'o', '\x1b[5 q']]);
+    expect(withCursor({ style: 'bar', blink: false })).toEqual([[0, 'o', '\x1b[6 q']]);
+    expect(withCursor({ style: 'underline', blink: false })).toEqual([[0, 'o', '\x1b[4 q']]);
+    expect(withCursor({ style: 'block', blink: false })).toEqual([[0, 'o', '\x1b[2 q']]);
   });
 });

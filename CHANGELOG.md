@@ -5,12 +5,52 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Breaking
+
+- **show:** a `show:` file must live inside the project root (the working directory, or Vite's `root`); a path outside it is an error unless `--allow-show-outside-root` or the plugin option `allowShowOutsideRoot` is set. Shown text also gets the secret and home-directory warnings that `exec:` output has.
+  Details: [DSL reference](https://casoon.github.io/castwright/docs/reference/dsl/).
+- **Parser:** `pause` on a `wait` step is a positioned error instead of being silently ignored.
+
+### Added
+
+- **CLI:** `castwright --version` and per-command `--help`.
+- **CLI:** `castwright validate` checks `show:` steps (file, `lines:` range, language) without running the highlighter.
+- **CLI:** an `exec:` step on Windows stops with a clear "not supported on Windows" message instead of a spawn failure.
+- **Cursor:** `terminal.cursor` takes effect — the cast carries it as DECSCUSR at t=0, and the SVG export draws block, bar or underline (no blink).
+- **Player:** plays asciicast v3 recordings, honours `idle_time_limit`, skips truncated or malformed event lines with a warning, and rejects v1 and unknown versions with a clear error.
+- **Player:** the progress bar is an accessible seek slider; while focus is inside the demo, Left/Right/Home/End seek and `k` toggles play/pause.
+- **Player:** `castwright:ready`, `castwright:play`, `castwright:pause`, `castwright:ended` and `castwright:error` events, and `poster="marker:<label>"`.
+- **Astro:** `<TerminalDemo src="…">` takes the accessibility fallback as slot content and warns at build time when none is given.
+- **npm:** `node-pty` is declared as an optional peer dependency of `@casoon/castwright`.
+
 ### Changed
 
+- **Parser:** "unknown markup tag" hints at the `{{` escape for shell braces such as `awk '{print $1}'`.
+- **Parser:** the `output` line-width warning measures terminal columns — escape sequences are ignored, wide characters and emoji count twice.
+- **Record:** `--record` writes `raw` output as a double-quoted scalar.
+- **Player:** changing attributes or `cast` on a mounted `<castwright-demo>` rebuilds the player; playback pauses in hidden tabs.
+- **Astro:** the reserved height includes the title bar and transport row and honours `rows`, `chrome` and `controls`.
 - **Pages:** the project site uses the current shared theme (0.12.6).
+- **Contributors:** CI runs on Node 22 and 24 and builds on Windows and macOS; the publish gate runs the asciicast compatibility check; a tag creates a GitHub Release; issue and pull request templates and `SECURITY.md` added.
+
+### Fixed
+
+- **Compiler:** `output` with `delay > 0` no longer appends a newline the text did not have, so `--record` replays match the live screen.
+- **Parser:** a double-quoted `output.raw` is no longer decoded twice — `"C:\\Users"` keeps its backslashes.
+- **Parser:** error positions inside block and quoted scalars point at the offending character, including bad `raw` escapes.
+- **SVG:** characters forbidden in XML 1.0 are dropped instead of producing a malformed file, and non-`#rrggbb` theme colours are rejected.
+- **Record:** `--record` keeps comments written on an `exec:` step.
+- **Tape:** a line edited with an unsupported key such as `Home` is typed but not run, and `Backspace` removes a whole grapheme.
+- **CLI:** a missing or unwritable file prints `castwright: cannot read|write <file>: …` instead of a stack trace, and `castwright dev` checks the file exists.
+- **Vite:** the plugin forwards YAML parse warnings and watches `show:` files before reading them, so creating a missing file recompiles the demo.
+- **Player:** a looping demo no longer restarts or keeps playing after it scrolls out of view during the final-frame hold.
+- **Player:** the terminal size is restored on seek, restart and loop after a recording's resize events.
+- **Player:** switching `prefers-reduced-motion` on while a demo plays stops it and shows the final frame.
+- **Player:** disconnecting restores the host element's attributes and `--castwright-*` properties; `controls="hover"` controls no longer capture clicks while invisible.
 
 ### Security
 
+- **Astro:** the inline cast JSON no longer breaks out of its `<script>` block when a demo's output contains `</script>` or `<!--`.
 - **Dependencies:** development and build dependencies updated to clear all `pnpm audit` advisories (Vitest 4, happy-dom 21, Vite 7.3.7, Astro 7.4.4 and their transitive packages); the published packages' runtime dependencies are unchanged.
 
 ## [0.5.2] - 2026-10-30

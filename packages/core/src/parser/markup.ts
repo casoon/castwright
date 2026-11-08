@@ -30,6 +30,8 @@ export interface MarkupContext {
   file: string;
   /** Character offset of `text`'s first character within `source`. */
   baseOffset: number;
+  /** Maps an index in `text` to a `source` offset; defaults to `baseOffset + index`. */
+  offsetAt?: (index: number) => number;
 }
 
 function resolveColorName(name: string): Color | null {
@@ -62,6 +64,11 @@ function resolveTag(tag: string, openedAt: number): MarkupOp | null {
   return color ? { kind: 'fg', color, openedAt } : null;
 }
 
+/** True when the tag looks like an attempt at a style (so a `{{` hint would be noise). */
+function isStyleLike(tag: string): boolean {
+  return /^(bg-|bright-|#)/.test(tag) || resolveColorName(tag) !== null || isAttributeName(tag);
+}
+
 function currentStyle(stack: MarkupOp[]): Omit<Span, 'text'> {
   const style: Omit<Span, 'text'> = {};
   for (const op of stack) {
@@ -79,6 +86,7 @@ function currentStyle(stack: MarkupOp[]): Omit<Span, 'text'> {
  *   unmatched `{/}`, or a tag left open at the end of the text.
  */
 export function parseMarkup(text: string, ctx: MarkupContext): Styled {
+  const at = (index: number) => ctx.offsetAt?.(index) ?? ctx.baseOffset + index;
   const spans: Span[] = [];
   const stack: MarkupOp[] = [];
   let buffer = '';
@@ -107,7 +115,7 @@ export function parseMarkup(text: string, ctx: MarkupContext): Styled {
       throw errorAtOffset(
         ctx.source,
         ctx.file,
-        ctx.baseOffset + i,
+        at(i),
         "unterminated markup tag: missing closing '}'",
       );
     }
@@ -116,12 +124,7 @@ export function parseMarkup(text: string, ctx: MarkupContext): Styled {
     if (content === '/') {
       flush();
       if (stack.length === 0) {
-        throw errorAtOffset(
-          ctx.source,
-          ctx.file,
-          ctx.baseOffset + i,
-          "unmatched '{/}': no open tag to close",
-        );
+        throw errorAtOffset(ctx.source, ctx.file, at(i), "unmatched '{/}': no open tag to close");
       }
       stack.pop();
       i = close + 1;
@@ -139,8 +142,10 @@ export function parseMarkup(text: string, ctx: MarkupContext): Styled {
       throw errorAtOffset(
         ctx.source,
         ctx.file,
-        ctx.baseOffset + i,
-        `unknown markup tag '{${content}}'`,
+        at(i),
+        `unknown markup tag '{${content}}'${
+          isStyleLike(content) ? '' : " — to write a literal '{', double it: '{{'"
+        }`,
       );
     }
     flush();
@@ -155,7 +160,7 @@ export function parseMarkup(text: string, ctx: MarkupContext): Styled {
     throw errorAtOffset(
       ctx.source,
       ctx.file,
-      ctx.baseOffset + unclosed.openedAt,
+      at(unclosed.openedAt),
       `unclosed markup tag: '{...}' opened here is never closed with '{/}' or '{//}'`,
     );
   }

@@ -260,3 +260,25 @@ describe('runBuild', () => {
     await expect(runBuild({ file, outDir: dir, format: 'cast' })).rejects.toThrow(/no primary key/);
   });
 });
+
+describe('runBuild — file errors', () => {
+  it('turns a missing input into a one-line usage error', async () => {
+    await expect(
+      runBuild({ file: '/nope/x.terminal.yaml', outDir: 'dist', format: 'cast' }),
+    ).rejects.toThrow('castwright: cannot read /nope/x.terminal.yaml: no such file or directory');
+  });
+
+  it('turns an unwritable output directory into a usage error', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'castwright-build-err-'));
+    try {
+      const file = join(dir, 'd.terminal.yaml');
+      writeFileSync(file, 'version: 1\nterminal: { cols: 40, rows: 5 }\nsteps: []\n');
+      writeFileSync(join(dir, 'blocker'), 'x');
+      await expect(
+        runBuild({ file, outDir: join(dir, 'blocker', 'out'), format: 'cast' }),
+      ).rejects.toBeInstanceOf(CliUsageError);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

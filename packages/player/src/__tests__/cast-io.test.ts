@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { deserializeCast } from '../cast-io.js';
 
 describe('deserializeCast', () => {
@@ -84,5 +84,51 @@ describe('deserializeCast — a real asciicast v2 file', () => {
     const theme = deserializeCast(inlined).header.theme;
     expect(theme?.palette).toEqual(['#111111', '#222222']);
     expect(theme?.cursor).toBe('#ff0000');
+  });
+});
+
+describe('deserializeCast — real recordings', () => {
+  it('converts asciicast v3 (term size, relative times) to v2', () => {
+    const text = [
+      '{"version":3,"term":{"cols":100,"rows":30,"theme":{"fg":"#fff","bg":"#000","palette":"#111:#222"}}}',
+      '[0.5,"o","a"]',
+      '[0.25,"o","b"]',
+      '[1,"x","0"]',
+    ].join('\n');
+    const cast = deserializeCast(text);
+    expect(cast.header).toMatchObject({ version: 2, width: 100, height: 30 });
+    expect(cast.header.theme?.palette).toEqual(['#111', '#222']);
+    expect(cast.events.map((e) => e[0])).toEqual([0.5, 0.75, 1.75]);
+  });
+
+  it('keeps idle_time_limit from the header', () => {
+    const cast = deserializeCast(
+      '{"version":2,"width":80,"height":24,"idle_time_limit":1.5}\n[0,"o","a"]',
+    );
+    expect((cast.header as { idle_time_limit?: number }).idle_time_limit).toBe(1.5);
+  });
+
+  it('skips a truncated last line instead of rejecting the whole cast', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const cast = deserializeCast('{"version":2,"width":80,"height":24}\n[0,"o","a"]\n[0.5,"o","b');
+    expect(cast.events).toEqual([[0, 'o', 'a']]);
+    expect(warn).toHaveBeenCalledOnce();
+    warn.mockRestore();
+  });
+
+  it('skips event lines that are not events', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const cast = deserializeCast(
+      '{"version":2,"width":80,"height":24}\n[0,"o","a"]\n{"x":1}\n["a","o","b"]',
+    );
+    expect(cast.events).toHaveLength(1);
+    warn.mockRestore();
+  });
+
+  it('names asciicast v1 and unknown versions', () => {
+    expect(() => deserializeCast('{"version":1,"width":80,"height":24,"stdout":[]}')).toThrow(/v1/);
+    expect(() => deserializeCast('{"version":7,"width":80,"height":24}\n[0,"o","a"]')).toThrow(
+      /unsupported asciicast version 7/,
+    );
   });
 });

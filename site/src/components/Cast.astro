@@ -6,6 +6,7 @@
  */
 import { CodeBlock, Demo } from '@casoon/pages-theme/components';
 import { url } from '@casoon/pages-theme/url';
+import { jsonForScript } from '../../../packages/astro/src/inline-json';
 import { siteDemo } from '../demos';
 
 interface Props {
@@ -48,7 +49,7 @@ const label = `Terminal demo: ${title}`;
       type="application/json"
       data-castwright-cast
       is:inline
-      set:html={JSON.stringify(demo.cast)}
+      set:html={jsonForScript(demo.cast)}
     />
     <pre>{demo.finalFrame}</pre>
   </castwright-demo>

@@ -60,6 +60,13 @@ function stepError(step: ExecStep, file: string, message: string): CastwrightPar
 }
 
 async function loadPty(step: ExecStep, file: string): Promise<Pty> {
+  if (process.platform === 'win32') {
+    throw stepError(
+      step,
+      file,
+      "step 'exec' is not supported on Windows: it runs commands with /bin/sh in a pseudo-terminal. Record the demo on macOS or Linux (castwright build --allow-exec --record) and build the recorded file anywhere",
+    );
+  }
   try {
     const module = await import('node-pty');
     return ((module as { default?: Pty }).default ?? module) as Pty;
@@ -206,7 +213,7 @@ function toSteps(recording: Recording): Step[] {
 
 // Things that should not end up in a published demo. A hint, not a scanner:
 // it catches the common shapes and says so, it does not promise anything.
-const SENSITIVE: [RegExp, string][] = [
+export const SENSITIVE: [RegExp, string][] = [
   [/\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}|\bgithub_pat_[A-Za-z0-9_]{20,}/, 'a GitHub token'],
   [/\bAKIA[0-9A-Z]{16}\b/, 'an AWS access key'],
   [/\bxox[abprs]-[A-Za-z0-9-]{10,}/, 'a Slack token'],

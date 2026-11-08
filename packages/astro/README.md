@@ -37,7 +37,25 @@ The component inlines the compiled cast as JSON (no fetch, no parser in the bund
 final terminal text as the light-DOM accessibility fallback, and reserves the terminal's height
 so hydration does not shift the page.
 
-Pass `src="/demo.cast"` instead of `demo` to fetch a pre-built cast at runtime.
+The reserved height is the row count (the cast's, or the `rows` prop) plus the screen padding,
+the title bar (unless `chrome="none"`) and the transport row (unless `controls` is `hover` or
+`none`), using chrome heights measured from the player. Row height depends on the visitor's
+monospace font, and a terminal wider than its container is scaled down by the player, so the
+reservation is exact only at the authored size; it is `min-height` only and is dropped as soon
+as the player has measured for real.
+
+Pass `src="/demo.cast"` instead of `demo` to fetch a pre-built cast at runtime. There is no
+compiled cast to take the accessibility fallback from, so give it as slot content:
+
+```astro
+<TerminalDemo src="/demo.cast" rows={20}>
+  <pre>$ npm install castwright
+added 42 packages</pre>
+</TerminalDemo>
+```
+
+Without a slot the build warns, and assistive technology gets an empty box until the player
+loads. Without `demo`, the height is only reserved when `rows` is set.
 
 `demo` and `src` aside, the props mirror the element's attributes: `autoplay`, `loop`,
 `loopDelay`, `poster`, `cols`, `rows`, `label`, `title`, `chrome`, `controls`, `class`.
