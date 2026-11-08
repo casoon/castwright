@@ -140,6 +140,24 @@ describe('<castwright-demo> — lazy init', () => {
     expect(el.player?.state).toBe('playing');
   });
 
+  it('cancels a pending loop restart when scrolled out during the final-frame hold', async () => {
+    const observed = installFakeIntersectionObserver();
+    const el = element();
+    el.setAttribute('loop', '');
+    el.innerHTML = `<script type="application/json" data-castwright-cast>${castJson}</script>`;
+    document.body.appendChild(el);
+
+    observed[0]?.trigger(true);
+    await vi.waitFor(() => expect(handles).toHaveLength(1));
+    (handles[0] as { state: string }).state = 'finished';
+
+    observed[0]?.trigger(false);
+    expect(el.player?.state).toBe('paused');
+
+    observed[0]?.trigger(true);
+    expect(el.player?.state).toBe('playing');
+  });
+
   it('mounts immediately where IntersectionObserver does not exist', async () => {
     vi.stubGlobal('IntersectionObserver', undefined);
     const el = element();

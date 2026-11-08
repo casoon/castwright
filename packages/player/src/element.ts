@@ -94,7 +94,12 @@ export class CastwrightDemoElement extends ElementBase {
               this.#resumeOnVisible = false;
               this.#handle?.play();
             }
-          } else if (this.#handle?.state === 'playing') {
+          } else if (
+            this.#handle?.state === 'playing' ||
+            // Held on the final frame before a loop restart: pause() cancels the
+            // pending restart, which would otherwise run off-screen.
+            (this.#handle?.state === 'finished' && boolAttr(this, 'loop'))
+          ) {
             // A page full of demos animating off-screen is a battery complaint.
             this.#resumeOnVisible = true;
             this.#handle.pause();

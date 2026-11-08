@@ -171,7 +171,11 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
   }
 
   function pause(): void {
-    if (destroyed || state !== 'playing') return;
+    if (destroyed) return;
+    // Finished with a loop pending: pausing cancels the hold timer, so a demo
+    // that scrolled away during the hold does not restart off-screen.
+    if (state === 'finished') clearLoopTimer();
+    if (state !== 'playing') return;
     cancelFrame();
     state = 'paused';
     render();

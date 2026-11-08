@@ -238,6 +238,16 @@ describe('mount — loop', () => {
     expect(handle.state).toBe('playing');
   });
 
+  it('pausing during the loop hold cancels the restart', async () => {
+    const handle = mountWith({ autoplay: true, loop: true, loopDelayMs: 500 });
+    await vi.advanceTimersByTimeAsync(1100);
+    expect(handle.state).toBe('finished');
+
+    handle.pause();
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(handle.state).toBe('finished');
+  });
+
   it('does not loop when loop is off', async () => {
     const handle = mountWith({ autoplay: true });
     await vi.advanceTimersByTimeAsync(3000);
