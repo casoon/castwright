@@ -102,9 +102,14 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
 
   // What replay writes into: an asciicast `r` event resizes the terminal, and
   // the scale has to follow or the frame keeps the previous size's geometry.
+  let currentCols = initialCols;
+  let currentRows = initialRows;
   const sink = {
     write: (data: string) => terminal.write(data),
     resize: (cols: number, rows: number) => {
+      if (cols === currentCols && rows === currentRows) return;
+      currentCols = cols;
+      currentRows = rows;
       terminal.resize?.(cols, rows);
       fitToWidth(host, chrome.screen, chrome.scaler);
     },
