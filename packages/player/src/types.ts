@@ -54,6 +54,12 @@ export interface PlayerOptions {
   autoplay?: boolean;
   chrome?: ChromeMode;
   controls?: ControlsMode;
+  /** Playback rate, 0.25–4. Default 1. Scales elapsed time, never the cast. */
+  speed?: number;
+  /** Show a labelled speed button in the transport row. Off by default. */
+  speedControl?: boolean;
+  /** Show a button that copies the final text to the clipboard. Off by default. */
+  copy?: boolean;
   loop?: boolean;
   /** Hold on the final frame before looping. A loop without it reads as a glitch. */
   loopDelayMs?: number;
@@ -89,6 +95,8 @@ export interface PlayerHandle {
   readonly markers: readonly PlayerMarker[];
   /** Seek to the first marker with this label. Returns false if there is none. */
   seekToMarker(label: string): boolean;
+  /** Playback rate. Setting it mid-playback keeps the current cast position. */
+  speed: number;
   readonly state: PlayerState;
   readonly durationSeconds: number;
   destroy(): void;

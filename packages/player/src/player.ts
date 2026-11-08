@@ -22,10 +22,19 @@ import { createXtermTerminal } from './xterm-adapter.js';
 
 const DEFAULT_LOOP_DELAY_MS = 2000;
 
+const MIN_SPEED = 0.25;
+const MAX_SPEED = 4;
+const SPEED_STEPS = [0.5, 1, 1.5, 2];
+const COPY_CONFIRM_MS = 2000;
+
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 function prefersReducedMotion(win: Window): boolean {
   return win.matchMedia?.(REDUCED_MOTION_QUERY).matches ?? false;
+}
+
+function clampSpeed(value: number): number {
+  return Number.isFinite(value) ? Math.min(MAX_SPEED, Math.max(MIN_SPEED, value)) : 1;
 }
 
 export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}): PlayerHandle {
@@ -81,6 +90,10 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     title,
     chrome: options.chrome ?? 'window',
     controls,
+    speedControl: options.speedControl === true,
+    // Without a Clipboard API (insecure context, old browser) the button would
+    // do nothing, so it is not offered.
+    copy: options.copy === true && typeof win.navigator?.clipboard?.writeText === 'function',
   });
 
   // So the window body matches the terminal rather than the page behind it —
@@ -153,6 +166,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
   let startedAt = 0;
   let destroyed = false;
   let announcedSecond = -1;
+  let speed = clampSpeed(options.speed ?? 1);
 
   chrome.progress.setAttribute('aria-valuemax', String(Math.floor(durationMs / 1000)));
 
@@ -212,6 +226,10 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     const playing = state === 'playing';
     chrome.playPause.textContent = playing ? '⏸' : '▶';
     chrome.playPause.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    if (chrome.speed) {
+      chrome.speed.textContent = `${speed}×`;
+      chrome.speed.setAttribute('aria-label', `Playback speed ${speed}×, change`);
+    }
   }
 
   function cancelFrame(): void {
@@ -245,7 +263,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
 
   function tick(): void {
     if (destroyed || state !== 'playing') return;
-    elapsedMs = performance.now() - startedAt;
+    elapsedMs = (performance.now() - startedAt) * speed;
 
     cursor = replay(timeline, cursor, elapsedMs, sink);
 
@@ -263,7 +281,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     if (destroyed || state === 'playing') return;
     clearLoopTimer();
     if (state === 'finished') restart();
-    startedAt = performance.now() - elapsedMs;
+    startedAt = performance.now() - elapsedMs / speed;
     state = 'playing';
     render();
     rafId = win.requestAnimationFrame(tick);
@@ -325,6 +343,35 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
   chrome.restart.addEventListener('click', () => {
     restart();
     play();
+  });
+
+  function setSpeed(value: number): void {
+    speed = clampSpeed(value);
+    // Re-anchor so the current cast position survives the rate change.
+    if (state === 'playing') startedAt = performance.now() - elapsedMs / speed;
+    render();
+  }
+
+  chrome.speed?.addEventListener('click', () => {
+    setSpeed(SPEED_STEPS.find((step) => step > speed) ?? SPEED_STEPS[0] ?? 1);
+  });
+
+  let copyTimer: ReturnType<typeof setTimeout> | undefined;
+  chrome.copy?.addEventListener('click', () => {
+    const status = chrome.copyStatus;
+    const announce = (text: string) => {
+      if (!status || destroyed) return;
+      status.textContent = text;
+      if (copyTimer !== undefined) clearTimeout(copyTimer);
+      copyTimer = setTimeout(() => {
+        copyTimer = undefined;
+        status.textContent = '';
+      }, COPY_CONFIRM_MS);
+    };
+    win.navigator.clipboard.writeText(chrome.fallback.textContent ?? '').then(
+      () => announce('Copied'),
+      () => announce('Copy failed'),
+    );
   });
 
   const SEEK_STEP_SECONDS = 5;
@@ -478,6 +525,12 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
       seek(marker.time);
       return true;
     },
+    get speed() {
+      return speed;
+    },
+    set speed(value: number) {
+      setSpeed(value);
+    },
     get state() {
       return state;
     },
@@ -488,6 +541,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
       destroyed = true;
       cancelFrame();
       clearLoopTimer();
+      if (copyTimer !== undefined) clearTimeout(copyTimer);
       resizeObserver?.disconnect();
       motionQuery?.removeEventListener?.('change', onMotionChange);
       doc.removeEventListener('visibilitychange', onVisibilityChange);

@@ -169,6 +169,10 @@ export const PLAYER_CSS = `
 
 .castwright-time { flex: none; font-variant-numeric: tabular-nums; }
 
+.castwright-btn[data-action="speed"] { font-size: 12px; font-variant-numeric: tabular-nums; }
+.castwright-copy-status { flex: none; font-size: 12px; }
+.castwright-copy-status:empty { display: none; }
+
 /* The accessibility fallback: present for assistive technology and copy/paste,
    invisible once the live terminal is running. Not display:none — that would
    remove it from the accessibility tree, which is the whole point of it. */
