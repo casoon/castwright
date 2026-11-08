@@ -136,6 +136,17 @@ A missing file, a range past its end or an unknown language is reported with the
 line and column of the step. The Vite plugin registers the shown file as a dependency of
 the demo, so editing it recompiles the demo in dev.
 
+The shown file must live inside the project: the working directory for the CLI, Vite's
+`root` for the plugin. A path that resolves outside it (`../`, an absolute path, or a
+symlink that leads out) is an error, since a demo contributed to a repository should not be
+able to pull `~/.npmrc` into a published page. To allow it anyway, pass
+`--allow-show-outside-root` to `castwright build`, `validate` and `dev`, or
+`allowShowOutsideRoot: true` to the Vite plugin.
+
+The shown text gets the same hints as [`exec`](#exec) output: if it looks like it contains a
+token, a private key or your home directory, the build prints a warning naming the step.
+That is a heuristic, not a scanner.
+
 A compiled cast depends on the Shiki version as well as the file: the project's lockfile
 is what keeps it byte-identical from one build to the next.
 

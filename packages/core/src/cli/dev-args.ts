@@ -8,15 +8,19 @@ export interface DevArgs {
   port: number;
   /** Let `exec:` steps run their commands — on every save. */
   allowExec?: boolean;
+  /** Let `show:` read files outside the working directory. */
+  allowShowOutsideRoot?: boolean;
 }
 
-const USAGE = 'usage: castwright dev <file> [--port <n>] [--allow-exec]';
+export const USAGE =
+  'usage: castwright dev <file> [--port <n>] [--allow-exec] [--allow-show-outside-root]';
 const DEFAULT_PORT = 4321;
 
 export function parseDevArgs(args: string[]): DevArgs {
   let file: string | undefined;
   let port = DEFAULT_PORT;
   let allowExec = false;
+  let allowShowOutsideRoot = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -30,6 +34,8 @@ export function parseDevArgs(args: string[]): DevArgs {
       port = parsed;
     } else if (arg === '--allow-exec') {
       allowExec = true;
+    } else if (arg === '--allow-show-outside-root') {
+      allowShowOutsideRoot = true;
     } else if (arg?.startsWith('-')) {
       throw new CliUsageError(`unknown option '${arg}'\n${USAGE}`);
     } else if (file === undefined) {
@@ -40,5 +46,10 @@ export function parseDevArgs(args: string[]): DevArgs {
   }
 
   if (file === undefined) throw new CliUsageError(`missing <file>\n${USAGE}`);
-  return { file, port, ...(allowExec ? { allowExec } : {}) };
+  return {
+    file,
+    port,
+    ...(allowExec ? { allowExec } : {}),
+    ...(allowShowOutsideRoot ? { allowShowOutsideRoot } : {}),
+  };
 }

@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -6,7 +6,7 @@ import { compile } from '../../compiler/compile.js';
 import { CastwrightParseError } from '../../parser/errors.js';
 import { parse } from '../../parser/parse.js';
 import type { Script, Styled } from '../../types.js';
-import { resolveShowSteps } from '../resolve.js';
+import { resolveShowSteps, validateShowSteps } from '../resolve.js';
 
 const yaml = (steps: string, theme = 'catppuccin-mocha') =>
   `version: 1\nterminal: { cols: 60, rows: 10, theme: ${theme} }\nsteps:\n${steps}`;
@@ -63,7 +63,7 @@ describe('resolveShowSteps', () => {
   });
 
   const resolve = (steps: string, theme?: string) =>
-    resolveShowSteps(parse(yaml(steps, theme), file), file);
+    resolveShowSteps(parse(yaml(steps, theme), file), file, { root: dir });
 
   const text = (script: Script) =>
     (script.steps[0] as { text: Styled }).text.map((span) => span.text).join('');
@@ -122,6 +122,49 @@ describe('resolveShowSteps', () => {
     );
   });
 
+  it('rejects a path outside the project root, naming the opt-in', async () => {
+    mkdirSync(join(dir, 'project'));
+    const outside = parse(yaml('  - show: ../a.ts\n'), file);
+    await expect(resolveShowSteps(outside, file, { root: join(dir, 'project') })).rejects.toThrow(
+      /demo\.terminal\.yaml:4:11: step 'show': \.\.\/a\.ts is outside the project root.*--allow-show-outside-root/,
+    );
+    const absolute = parse(yaml(`  - show: ${join(dir, 'a.ts')}\n`), file);
+    await expect(resolveShowSteps(absolute, file, { root: join(dir, 'project') })).rejects.toThrow(
+      /outside the project root/,
+    );
+  });
+
+  it('rejects a symlink that leads out of the root', async () => {
+    mkdirSync(join(dir, 'project'));
+    symlinkSync(join(dir, 'a.ts'), join(dir, 'project', 'link.ts'));
+    const inner = join(dir, 'project', 'demo.terminal.yaml');
+    const script = parse(yaml('  - show: link.ts\n'), inner);
+    await expect(resolveShowSteps(script, inner, { root: join(dir, 'project') })).rejects.toThrow(
+      /outside the project root/,
+    );
+  });
+
+  it('allows an outside path with the opt-in', async () => {
+    mkdirSync(join(dir, 'project'));
+    const inner = join(dir, 'project', 'demo.terminal.yaml');
+    const script = parse(yaml('  - show: ../a.ts\n'), inner);
+    const resolved = await resolveShowSteps(script, inner, {
+      root: join(dir, 'project'),
+      allowOutsideRoot: true,
+    });
+    expect(resolved.files).toEqual([join(dir, 'a.ts')]);
+  });
+
+  it('warns when the shown file looks like it holds a secret', async () => {
+    writeFileSync(join(dir, 'env.ts'), `const t = 'ghp_${'a'.repeat(36)}';\n`);
+    const warnings: string[] = [];
+    await resolveShowSteps(parse(yaml('  - show: env.ts\n'), file), file, {
+      root: dir,
+      onWarning: (message, line) => warnings.push(`${line}: ${message}`),
+    });
+    expect(warnings).toEqual([expect.stringMatching(/^4: step 'show': env\.ts .*a GitHub token/)]);
+  });
+
   it('asks for lang when the file has no extension', async () => {
     writeFileSync(join(dir, 'Makefile'), 'all:\n');
     await expect(resolve('  - show: Makefile\n')).rejects.toThrow(/set 'lang'/);
@@ -132,5 +175,33 @@ describe('compile — unresolved show:', () => {
   it('refuses rather than silently dropping the step', () => {
     const script = parse(yaml('  - show: a.ts\n'), 'demo.terminal.yaml');
     expect(() => compile(script)).toThrow(/resolveShowSteps/);
+  });
+});
+
+describe('validateShowSteps', () => {
+  let dir: string;
+  let file: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'castwright-show-validate-'));
+    file = join(dir, 'demo.terminal.yaml');
+    writeFileSync(join(dir, 'a.ts'), 'const a = 1;\n// two\nconst b = 2;\n');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const validate = (steps: string) =>
+    validateShowSteps(parse(yaml(steps), file), file, { root: dir });
+
+  it('accepts a good step without highlighting', async () => {
+    await expect(validate('  - show: a.ts\n    lines: 1-3\n')).resolves.toBeUndefined();
+  });
+
+  it('reports a missing file, a range past the end and an unknown language', async () => {
+    await expect(validate('  - show: nope.ts\n')).rejects.toThrow(/file not found/);
+    await expect(validate('  - show: a.ts\n    lines: 2-9\n')).rejects.toThrow(/past the end/);
+    await expect(validate('  - show: a.ts\n    lang: klingon\n')).rejects.toThrow(/klingon/);
   });
 });

@@ -12,7 +12,7 @@ import { isTapeFile, parseTape } from '../tape/parse.js';
 import { tapeToSource } from '../tape/to-yaml.js';
 import { CliUsageError } from './errors.js';
 import { FORMAT_NAMES, getFormat } from './formats.js';
-import { outputBaseName, printWarning } from './util.js';
+import { fsUsageError, outputBaseName, printWarning } from './util.js';
 
 export interface BuildOptions {
   file: string;
@@ -28,10 +28,12 @@ export interface BuildOptions {
   allowExec?: boolean;
   /** Write what `exec:` steps produced back into the YAML file. Implies running them. */
   record?: boolean;
+  /** Let `show:` read files outside the working directory. */
+  allowShowOutsideRoot?: boolean;
 }
 
-const USAGE =
-  'usage: castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--start final|beginning] [--allow-exec [--record]]';
+export const USAGE =
+  'usage: castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--start final|beginning] [--allow-exec [--record]] [--allow-show-outside-root]';
 
 export function parseBuildArgs(args: string[]): BuildOptions {
   let file: string | undefined;
@@ -42,6 +44,7 @@ export function parseBuildArgs(args: string[]): BuildOptions {
   let start: SvgStart | undefined;
   let allowExec = false;
   let record = false;
+  let allowShowOutsideRoot = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -72,6 +75,8 @@ export function parseBuildArgs(args: string[]): BuildOptions {
       allowExec = true;
     } else if (arg === '--record') {
       record = true;
+    } else if (arg === '--allow-show-outside-root') {
+      allowShowOutsideRoot = true;
     } else if (arg?.startsWith('-')) {
       throw new CliUsageError(`unknown option '${arg}'\n${USAGE}`);
     } else if (file === undefined) {
@@ -106,7 +111,24 @@ export function parseBuildArgs(args: string[]): BuildOptions {
     ...(start === undefined ? {} : { start }),
     ...(allowExec ? { allowExec } : {}),
     ...(record ? { record } : {}),
+    ...(allowShowOutsideRoot ? { allowShowOutsideRoot } : {}),
   };
+}
+
+function readInput(file: string): string {
+  try {
+    return readFileSync(file, 'utf8');
+  } catch (error) {
+    throw fsUsageError('read', file, error);
+  }
+}
+
+function writeOutput(file: string, write: () => void): void {
+  try {
+    write();
+  } catch (error) {
+    throw fsUsageError('write', file, error);
+  }
 }
 
 /** @returns the written file's path, for the caller to print to stdout. */
@@ -120,7 +142,7 @@ export async function runBuild(options: BuildOptions): Promise<string> {
 
   const onWarning = (message: string, line: number, column: number): void =>
     printWarning(options.file, message, line, column);
-  let source = readFileSync(options.file, 'utf8');
+  let source = readInput(options.file);
   const tape = isTapeFile(options.file);
   // A tape has nowhere to keep recorded output: --record writes a new
   // .terminal.yaml next to it instead, and never over one that exists.
@@ -147,12 +169,15 @@ export async function runBuild(options: BuildOptions): Promise<string> {
     // artifact matches what every later build will produce.
     const base = tape ? tapeToSource(parsed, basename(options.file)) : source;
     source = recordIntoSource(base, executed.recordings);
-    writeFileSync(recordInto, source);
+    writeOutput(recordInto, () => writeFileSync(recordInto, source));
     if (tape) process.stderr.write(`${recordInto}: recorded from ${options.file}\n`);
     scriptFile = recordInto;
     script = parse(source, scriptFile, { onWarning });
   }
-  const { script: resolved } = await resolveShowSteps(script, scriptFile);
+  const { script: resolved } = await resolveShowSteps(script, scriptFile, {
+    ...(options.allowShowOutsideRoot ? { allowOutsideRoot: true } : {}),
+    onWarning,
+  });
   const cast = compile(resolved);
   const content = await outputFormat.render(cast, {
     chrome: !options.noChrome,
@@ -160,8 +185,10 @@ export async function runBuild(options: BuildOptions): Promise<string> {
     ...(options.start === undefined ? {} : { start: options.start }),
   });
 
-  mkdirSync(options.outDir, { recursive: true });
   const outPath = join(options.outDir, `${outputBaseName(options.file)}.${outputFormat.extension}`);
-  writeFileSync(outPath, content);
+  writeOutput(outPath, () => {
+    mkdirSync(options.outDir, { recursive: true });
+    writeFileSync(outPath, content);
+  });
   return outPath;
 }

@@ -4,12 +4,17 @@ description: castwright build, validate and dev.
 order: 2
 ---
 
-Errors go to stderr, results to stdout, so the commands compose.
+Errors go to stderr, results to stdout, so the commands compose. A missing or unwritable
+file is reported in one line (`castwright: cannot read demo.terminal.yaml: no such file or
+directory`) and exits 1.
+
+`castwright --version` prints the installed version, and `castwright <command> --help`
+prints that command's usage.
 
 ## build
 
 ```
-castwright build <file> [-o|--out <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--start final|beginning] [--allow-exec [--record]]
+castwright build <file> [-o|--out <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--start final|beginning] [--allow-exec [--record]] [--allow-show-outside-root]
 ```
 
 Compiles a `*.terminal.yaml` — or a [VHS `.tape`](../tape/) — to `<dir>/<name>.<format>`
@@ -81,10 +86,16 @@ castwright build demo.terminal.yaml --allow-exec --record   # once
 castwright build demo.terminal.yaml                         # every build after
 ```
 
+### show: steps
+
+A `show:` file must live inside the working directory; a path that resolves outside it
+(`../`, an absolute path, a symlink out) fails the build. `--allow-show-outside-root`
+lifts that. See [`show`](../dsl/#show).
+
 ## validate
 
 ```
-castwright validate <file>...
+castwright validate <file>... [--allow-show-outside-root]
 ```
 
 Checks every file given, not just up to the first failure, and exits non-zero if any has
@@ -98,7 +109,9 @@ demos/broken.terminal.yaml:4:5: step 'clear' must be `true` (or omitted entirely
       ^
 ```
 
-Warnings are printed but do not fail the command.
+`show:` steps are checked too: the file must exist inside the working directory, a `lines:`
+range must fit, and the language must be known (the last needs Shiki installed; nothing is
+highlighted). Warnings are printed but do not fail the command.
 
 Glob patterns are not expanded by the command itself: a pre-commit hook passes an explicit
 file list, and a shell has already expanded `*.terminal.yaml` before the process starts.
@@ -106,7 +119,7 @@ file list, and a shell has already expanded `*.terminal.yaml` before the process
 ## dev
 
 ```
-castwright dev <file> [-p|--port <n>] [--allow-exec]
+castwright dev <file> [-p|--port <n>] [--allow-exec] [--allow-show-outside-root]
 ```
 
 Serves one demo and reloads it on save (`-p` is the short form of `--port`). Edit the YAML, watch the terminal in the browser

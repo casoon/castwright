@@ -7,8 +7,8 @@ import { parseValidateArgs, runValidate } from '../validate.js';
 
 describe('parseValidateArgs', () => {
   it('accepts one or more file paths', () => {
-    expect(parseValidateArgs(['a.terminal.yaml'])).toEqual(['a.terminal.yaml']);
-    expect(parseValidateArgs(['a.terminal.yaml', 'b.terminal.yaml'])).toEqual([
+    expect(parseValidateArgs(['a.terminal.yaml']).files).toEqual(['a.terminal.yaml']);
+    expect(parseValidateArgs(['a.terminal.yaml', 'b.terminal.yaml']).files).toEqual([
       'a.terminal.yaml',
       'b.terminal.yaml',
     ]);
@@ -49,7 +49,7 @@ describe('runValidate', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('returns true and prints nothing for a valid file', () => {
+  it('returns true and prints nothing for a valid file', async () => {
     const file = join(dir, 'good.terminal.yaml');
     writeFileSync(
       file,
@@ -57,13 +57,13 @@ describe('runValidate', () => {
       'utf8',
     );
 
-    const ok = runValidate([file]);
+    const ok = await runValidate([file]);
 
     expect(ok).toBe(true);
     expect(stderr).toEqual([]);
   });
 
-  it('returns false and reports a positioned error for an invalid file, without stopping at the first failure', () => {
+  it('returns false and reports a positioned error for an invalid file, without stopping at the first failure', async () => {
     const bad = join(dir, 'bad.terminal.yaml');
     const good = join(dir, 'good.terminal.yaml');
     writeFileSync(
@@ -77,14 +77,14 @@ describe('runValidate', () => {
       'utf8',
     );
 
-    const ok = runValidate([bad, good]);
+    const ok = await runValidate([bad, good]);
 
     expect(ok).toBe(false);
     expect(stderr.join('')).toContain('bad.terminal.yaml');
     expect(stderr.join('')).toContain('must be `true`');
   });
 
-  it('checks every file even after an earlier one fails', () => {
+  it('checks every file even after an earlier one fails', async () => {
     const bad = join(dir, 'bad.terminal.yaml');
     const alsoBad = join(dir, 'also-bad.terminal.yaml');
     writeFileSync(
@@ -94,7 +94,7 @@ describe('runValidate', () => {
     );
     writeFileSync(alsoBad, 'version: 2\nterminal: { cols: 80, rows: 24 }\nsteps: []\n', 'utf8');
 
-    const ok = runValidate([bad, alsoBad]);
+    const ok = await runValidate([bad, alsoBad]);
 
     expect(ok).toBe(false);
     const joined = stderr.join('');
@@ -102,7 +102,7 @@ describe('runValidate', () => {
     expect(joined).toContain('also-bad.terminal.yaml');
   });
 
-  it('prints a warning but still returns true', () => {
+  it('prints a warning but still returns true', async () => {
     const file = join(dir, 'warn.terminal.yaml');
     writeFileSync(
       file,
@@ -110,7 +110,7 @@ describe('runValidate', () => {
       'utf8',
     );
 
-    const ok = runValidate([file]);
+    const ok = await runValidate([file]);
 
     expect(ok).toBe(true);
     expect(stderr.join('')).toContain('warning');

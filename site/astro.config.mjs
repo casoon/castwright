@@ -1,5 +1,6 @@
 // @ts-check
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import { castwright } from '@casoon/castwright/vite';
 import casoonPages from '@casoon/pages-theme';
 import { defineConfig } from 'astro/config';
@@ -51,6 +52,7 @@ export default defineConfig({
     // compiled at build time, exactly as a consumer's would be. `allowExec` is
     // for examples/vhs.tape, whose commands run during the build — every other
     // demo is written or already recorded.
-    plugins: [castwright({ allowExec: true })],
+    // The demos live in ../examples, so the repository, not the site, is the project root.
+    plugins: [castwright({ allowExec: true, root: fileURLToPath(new URL('..', import.meta.url)) })],
   },
 });

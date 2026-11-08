@@ -9,6 +9,7 @@
 // project without Vite costs nothing.
 
 import { readFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
 import { compile } from '../compiler/compile.js';
 import { finalFrameText } from '../compiler/final-frame.js';
 import { resolveExecSteps } from '../exec/resolve.js';
@@ -26,6 +27,7 @@ interface VitePluginLike {
     code: string,
     id: string,
   ) => Promise<{ code: string; map: null } | null> | { code: string; map: null } | null;
+  configResolved?: (config: { root: string }) => void;
   handleHotUpdate?: (ctx: { file: string; server: { ws: { send: (p: unknown) => void } } }) => void;
 }
 
@@ -45,6 +47,10 @@ export interface CastwrightPluginOptions {
    * for anything that ships.
    */
   allowExec?: boolean;
+  /** The project root `show:` files must live inside. Default: Vite's `root`. */
+  root?: string;
+  /** Let `show:` read files outside the project root. Default false. */
+  allowShowOutsideRoot?: boolean;
 }
 
 // Vite's own query suffixes mean "give me this file as X" — `?raw` in
@@ -78,12 +84,17 @@ export function castwright(options: CastwrightPluginOptions = {}): VitePluginLik
   const include = options.include ?? DEFAULT_INCLUDE;
   const emitFinalFrame = options.emitFinalFrame ?? true;
   const allowExec = options.allowExec ?? false;
+  let root = options.root;
 
   return {
     name: 'castwright',
     // Run before Vite's own asset handling, which would otherwise treat the
     // YAML file as a static asset and never hand it here.
     enforce: 'pre',
+
+    configResolved(config) {
+      root ??= config.root;
+    },
 
     async transform(code, id) {
       if (!include(id)) return null;
@@ -99,12 +110,20 @@ export function castwright(options: CastwrightPluginOptions = {}): VitePluginLik
           this.warn(`${file}:${line}:${column}: ${message}`);
         const parsed = isTapeFile(file)
           ? parseTape(source, file, { exec: allowExec, onWarning })
-          : parse(source, file);
+          : parse(source, file, { onWarning });
         const executed = await resolveExecSteps(parsed, file, { allowExec, onWarning });
-        const { script, files } = await resolveShowSteps(executed.script, file);
         // A file shown with `show:` is part of this module: editing it must
-        // recompile the demo, in dev (HMR) and in watch builds alike.
-        for (const shown of files) this.addWatchFile(shown);
+        // recompile the demo, in dev (HMR) and in watch builds alike. Watched
+        // before it is read, so a file that does not exist yet is picked up
+        // when it appears.
+        for (const step of executed.script.steps) {
+          if (step.kind === 'show') this.addWatchFile(resolve(dirname(file), step.file));
+        }
+        const { script } = await resolveShowSteps(executed.script, file, {
+          ...(root === undefined ? {} : { root }),
+          ...(options.allowShowOutsideRoot ? { allowOutsideRoot: true } : {}),
+          onWarning,
+        });
         cast = compile(script);
       } catch (error) {
         if (error instanceof CastwrightParseError) {
