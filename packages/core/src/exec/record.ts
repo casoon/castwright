@@ -6,15 +6,7 @@
 // Works on the YAML document, not on text, so comments and the rest of the
 // file survive; only the `exec:` items in `steps` are replaced.
 
-import {
-  isMap,
-  isNode,
-  isScalar,
-  isSeq,
-  parseDocument,
-  Scalar,
-  type YAMLMap,
-} from 'yaml';
+import { isMap, isNode, isScalar, isSeq, parseDocument, Scalar, type YAMLMap } from 'yaml';
 import type { Recording } from './resolve.js';
 
 // A recorded block plays line by line at roughly the pace it was recorded,
