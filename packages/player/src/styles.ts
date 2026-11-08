@@ -184,11 +184,16 @@ castwright-demo[data-controls="hover"] .castwright-transport {
   inset-inline: 0;
   inset-block-end: 0;
   opacity: 0;
+  /* Invisible must also mean untouchable: otherwise clicks and text selection
+     on the bottom strip of the terminal hit buttons nobody can see. Keyboard
+     focus is unaffected, and :focus-within turns it back on. */
+  pointer-events: none;
   transition: opacity 150ms ease;
 }
 castwright-demo[data-controls="hover"]:hover .castwright-transport,
 castwright-demo[data-controls="hover"]:focus-within .castwright-transport {
   opacity: 1;
+  pointer-events: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
