@@ -6,7 +6,7 @@
 // Works on the YAML document, not on text, so comments and the rest of the
 // file survive; only the `exec:` items in `steps` are replaced.
 
-import { isMap, isScalar, isSeq, parseDocument, type YAMLMap } from 'yaml';
+import { isMap, isNode, isScalar, isSeq, parseDocument, type YAMLMap } from 'yaml';
 import type { Recording } from './resolve.js';
 
 // A recorded block plays line by line at roughly the pace it was recorded,
@@ -15,6 +15,17 @@ const MAX_LINE_DELAY_MS = 200;
 
 function isExecItem(item: unknown): item is YAMLMap {
   return isMap(item) && item.items.some((pair) => isScalar(pair.key) && pair.key.value === 'exec');
+}
+
+function execComments(item: YAMLMap): string[] {
+  const found: (string | null | undefined)[] = [item.commentBefore];
+  for (const pair of item.items) {
+    for (const node of [pair.key, pair.value]) {
+      if (isNode(node)) found.push(node.commentBefore, node.comment);
+    }
+  }
+  found.push(item.comment);
+  return found.filter((c): c is string => typeof c === 'string' && c !== '');
 }
 
 function scalarAt(map: YAMLMap, key: string): unknown {
@@ -73,8 +84,11 @@ export function recordIntoSource(source: string, recordings: Recording[]): strin
     // A command that printed nothing gets no output step; its pause moves to the run.
     const silent = raw === '';
     const runNode = doc.createNode(silent && pause !== undefined ? { ...run, pause } : run);
-    // Keep a comment written above the exec step with the step that replaces it.
-    if (item.commentBefore) runNode.commentBefore = item.commentBefore;
+    // Keep the comments written on the exec step — above it, and inline on any
+    // of its keys (`cwd: snippets  # where it runs`) — above the run step that
+    // replaces it.
+    const comments = execComments(item);
+    if (comments.length > 0) runNode.commentBefore = comments.join('\n');
     items.push(runNode);
     if (!silent) items.push(doc.createNode(output));
   }

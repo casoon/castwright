@@ -113,6 +113,23 @@ describe('parseTape — commands', () => {
     expect(warnings).toEqual([expect.stringMatching(/typed but not run/)]);
   });
 
+  it('with exec, does not run a line edited with an unsupported key such as Home', () => {
+    const { warnings, onWarning } = collect();
+    const script = parseTape('Type "b"\nHome\nType "echo a"\nEnter\n', 'demo.tape', {
+      exec: true,
+      onWarning,
+    });
+    expect(script.steps.some((s) => s.kind === 'exec')).toBe(false);
+    expect(warnings).toEqual(expect.arrayContaining([expect.stringMatching(/typed but not run/)]));
+  });
+
+  it('Backspace removes a whole grapheme from the line it would run', () => {
+    const script = parseTape('Type "echo a👍🏽"\nBackspace\nType "b"\nEnter\n', 'demo.tape', {
+      exec: true,
+    });
+    expect(script.steps[0]).toMatchObject({ kind: 'exec', command: 'echo ab' });
+  });
+
   it('with exec, runs hidden commands as setup for the visible ones', () => {
     const script = parseTape(
       'Hide\nType "cd /tmp"\nEnter\nType "clear"\nEnter\nShow\nType "pwd"\nEnter\n',
