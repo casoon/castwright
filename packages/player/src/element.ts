@@ -6,6 +6,7 @@
 
 import { deserializeCast } from './cast-io.js';
 import { mount } from './player.js';
+import { buildTimeline, findMarker } from './timeline.js';
 import type { Cast, ChromeMode, ControlsMode, PlayerHandle, PlayerOptions } from './types.js';
 
 const ELEMENT_NAME = 'castwright-demo';
@@ -216,6 +217,7 @@ export class CastwrightDemoElement extends ElementBase {
       // A demo that cannot load must not take the page down with it. Leave the
       // fallback children exactly as they are — they are the content.
       console.error('castwright: failed to load cast', error);
+      this.dispatchEvent(new CustomEvent('castwright:error', { bubbles: true, detail: { error } }));
       return;
     }
     // Removed and re-inserted while the fetch was in flight: the newer #start()
@@ -223,7 +225,13 @@ export class CastwrightDemoElement extends ElementBase {
     if (generation !== this.#generation || !this.isConnected) return;
 
     this.#fallback = [...this.childNodes];
-    this.#handle = mount(this, cast, this.#options());
+    this.#handle = mount(this, cast, this.#options(cast));
+    this.dispatchEvent(
+      new CustomEvent('castwright:ready', {
+        bubbles: true,
+        detail: { durationSeconds: this.#handle.durationSeconds },
+      }),
+    );
   }
 
   /**
@@ -251,7 +259,7 @@ export class CastwrightDemoElement extends ElementBase {
     throw new Error('castwright: no cast — set a `cast` property, an inline <script>, or src=');
   }
 
-  #options(): PlayerOptions {
+  #options(cast: Cast): PlayerOptions {
     const options: PlayerOptions = {
       autoplay: boolAttr(this, 'autoplay'),
       loop: boolAttr(this, 'loop'),
@@ -267,7 +275,7 @@ export class CastwrightDemoElement extends ElementBase {
     const label = this.getAttribute('label') ?? undefined;
     const cols = numAttr(this, 'cols', { integer: true, min: 1, max: MAX_TERMINAL_COLS });
     const rows = numAttr(this, 'rows', { integer: true, min: 1, max: MAX_TERMINAL_ROWS });
-    const poster = this.#poster();
+    const poster = this.#poster(cast);
     const loopDelay = numAttr(this, 'loop-delay', { min: 0, max: MAX_LOOP_DELAY_MS });
 
     if (title !== undefined) options.title = title;
@@ -279,8 +287,21 @@ export class CastwrightDemoElement extends ElementBase {
     return options;
   }
 
-  /** `poster="3.5"` — seconds. Marker-based posters wait until markers are used. */
-  #poster(): number | undefined {
+  /**
+   * `poster="3.5"` — seconds — or `poster="marker:<label>"`, the time of the
+   * first marker event with that label.
+   */
+  #poster(cast: Cast): number | undefined {
+    const raw = this.getAttribute('poster');
+    if (raw?.startsWith('marker:')) {
+      const label = raw.slice('marker:'.length);
+      const marker = findMarker(buildTimeline(cast), label);
+      if (!marker) {
+        console.warn(`castwright: ignoring poster="${raw}" — no marker with that label`);
+        return undefined;
+      }
+      return marker.timeMs / 1000;
+    }
     return numAttr(this, 'poster', { min: 0 });
   }
 }

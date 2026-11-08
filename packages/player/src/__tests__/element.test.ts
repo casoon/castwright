@@ -419,6 +419,58 @@ describe('<castwright-demo> — reactive configuration', () => {
 
     observed[0]?.trigger(true);
     await vi.waitFor(() => expect(mount).toHaveBeenCalledOnce());
-    expect(vi.mocked(mount).mock.calls[0]?.[2].loop).toBe(true);
+    expect(vi.mocked(mount).mock.calls[0]?.[2]?.loop).toBe(true);
+  });
+});
+
+describe('<castwright-demo> — events and marker posters', () => {
+  it('dispatches castwright:ready with the player already available', async () => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    const el = element();
+    el.cast = cast;
+    let playerAtReady: unknown;
+    el.addEventListener('castwright:ready', () => {
+      playerAtReady = el.player;
+    });
+    document.body.appendChild(el);
+    await vi.waitFor(() => expect(playerAtReady).toBeDefined());
+  });
+
+  it('dispatches castwright:error when the cast cannot load', async () => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const el = element();
+    const onError = vi.fn();
+    el.addEventListener('castwright:error', onError);
+    document.body.appendChild(el);
+    await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce());
+  });
+
+  it('resolves poster="marker:<label>" to the marker time', async () => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    const el = element();
+    el.setAttribute('poster', 'marker:intro');
+    el.cast = {
+      header: cast.header,
+      events: [
+        [0, 'o', 'a'],
+        [1.25, 'm', 'intro'],
+      ],
+    };
+    document.body.appendChild(el);
+    await vi.waitFor(() => expect(mount).toHaveBeenCalledOnce());
+    expect(vi.mocked(mount).mock.calls[0]?.[2]?.poster).toBe(1.25);
+  });
+
+  it('warns and ignores an unknown marker label', async () => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const el = element();
+    el.setAttribute('poster', 'marker:nope');
+    el.cast = cast;
+    document.body.appendChild(el);
+    await vi.waitFor(() => expect(mount).toHaveBeenCalledOnce());
+    expect(vi.mocked(mount).mock.calls[0]?.[2]?.poster).toBeUndefined();
+    expect(warn).toHaveBeenCalled();
   });
 });

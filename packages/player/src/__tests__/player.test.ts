@@ -606,3 +606,77 @@ describe('mount — destroy cleans the host', () => {
     expect(host.style.getPropertyValue('--castwright-cast-bg')).toBe('');
   });
 });
+
+describe('mount — seek bar, keyboard and events', () => {
+  function slider(): HTMLElement {
+    return host.querySelector('[role="slider"]') as HTMLElement;
+  }
+  function key(target: Element, k: string) {
+    const event = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true });
+    target.dispatchEvent(event);
+    return event;
+  }
+
+  it('exposes the progress bar as a named, focusable slider with value text', async () => {
+    mountWith({ autoplay: true });
+    await vi.advanceTimersByTimeAsync(500);
+    const el = slider();
+    expect(el.getAttribute('aria-label')).toBe('Seek');
+    expect(el.getAttribute('tabindex')).toBe('0');
+    expect(el.hasAttribute('aria-hidden')).toBe(false);
+    expect(el.getAttribute('aria-valuemax')).toBe('1');
+    expect(el.getAttribute('aria-valuetext')).toMatch(/of 0:01$/);
+  });
+
+  it('seeks to the clicked position', () => {
+    const handle = mountWith();
+    slider().getBoundingClientRect = () => ({ left: 0, width: 100 }) as DOMRect;
+    slider().dispatchEvent(new MouseEvent('click', { clientX: 50, bubbles: true }));
+    expect(terminal.screen()).toBe('$ ls\r\n');
+    expect(handle.state).toBe('idle');
+  });
+
+  it('seeks with arrow keys, Home and End, and prevents page scroll', () => {
+    mountWith();
+    key(slider(), 'End');
+    expect(terminal.screen()).toBe('$ ls\r\ndone\r\n');
+    expect(key(slider(), 'ArrowLeft').defaultPrevented).toBe(true);
+    expect(terminal.screen()).toBe('$ ');
+    key(slider(), 'ArrowRight');
+    expect(terminal.screen()).toBe('$ ls\r\ndone\r\n');
+    key(slider(), 'Home');
+    expect(terminal.screen()).toBe('$ ');
+  });
+
+  it('toggles playback with k anywhere in the demo, and with Space on the slider only', () => {
+    const handle = mountWith();
+    const button = host.querySelector('[data-action="restart"]') as HTMLElement;
+    key(button, 'k');
+    expect(handle.state).toBe('playing');
+    key(button, ' ');
+    expect(handle.state).toBe('playing');
+    key(slider(), ' ');
+    expect(handle.state).toBe('paused');
+  });
+
+  it('ignores shortcuts with modifier keys and leaves Tab alone', () => {
+    const handle = mountWith();
+    const mod = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true });
+    slider().dispatchEvent(mod);
+    expect(handle.state).toBe('idle');
+    expect(key(slider(), 'Tab').defaultPrevented).toBe(false);
+  });
+
+  it('dispatches play, pause and ended as bubbling CustomEvents on the host', async () => {
+    const seen: string[] = [];
+    for (const name of ['play', 'pause', 'ended']) {
+      document.body.addEventListener(`castwright:${name}`, () => seen.push(name));
+    }
+    const handle = mountWith();
+    handle.play();
+    handle.pause();
+    handle.play();
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(seen).toEqual(['play', 'pause', 'play', 'ended']);
+  });
+});

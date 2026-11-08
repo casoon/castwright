@@ -137,12 +137,36 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
   let loopTimer: ReturnType<typeof setTimeout> | undefined;
   let startedAt = 0;
   let destroyed = false;
+  let announcedSecond = -1;
+
+  chrome.progress.setAttribute('aria-valuemax', String(Math.floor(durationMs / 1000)));
+
+  /** DOM events on the host, so integrations need not poll `.player`. */
+  function emit(name: string): void {
+    host.dispatchEvent(
+      new win.CustomEvent(`castwright:${name}`, {
+        bubbles: true,
+        detail: { time: elapsedMs / 1000 },
+      }),
+    );
+  }
 
   function render(): void {
     if (controls === 'none') return;
     const ratio = durationMs === 0 ? 1 : Math.min(1, elapsedMs / durationMs);
     chrome.progressBar.style.width = `${(ratio * 100).toFixed(2)}%`;
     chrome.time.textContent = `${formatClock(elapsedMs / 1000)} / ${formatClock(durationMs / 1000)}`;
+    // Whole seconds only: a slider changing 60 times a second would flood
+    // assistive technology.
+    const second = Math.floor(elapsedMs / 1000);
+    if (second !== announcedSecond) {
+      announcedSecond = second;
+      chrome.progress.setAttribute('aria-valuenow', String(second));
+      chrome.progress.setAttribute(
+        'aria-valuetext',
+        `${formatClock(elapsedMs / 1000)} of ${formatClock(durationMs / 1000)}`,
+      );
+    }
     const playing = state === 'playing';
     chrome.playPause.textContent = playing ? '⏸' : '▶';
     chrome.playPause.setAttribute('aria-label', playing ? 'Pause' : 'Play');
@@ -166,6 +190,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     state = 'finished';
     cancelFrame();
     render();
+    emit('ended');
     if (options.loop && !destroyed) {
       loopTimer = setTimeout(() => {
         loopTimer = undefined;
@@ -200,6 +225,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     state = 'playing';
     render();
     rafId = win.requestAnimationFrame(tick);
+    emit('play');
   }
 
   function pause(): void {
@@ -211,6 +237,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     cancelFrame();
     state = 'paused';
     render();
+    emit('pause');
   }
 
   function restart(): void {
@@ -257,6 +284,49 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     restart();
     play();
   });
+
+  const SEEK_STEP_SECONDS = 5;
+  chrome.progress.addEventListener('click', (event) => {
+    const rect = chrome.progress.getBoundingClientRect();
+    if (rect.width === 0) return;
+    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    seek(ratio * (durationMs / 1000));
+  });
+
+  // Shortcuts apply only while focus is inside the demo, so they never capture
+  // keys page-wide (WCAG 2.1.4) and, being ordinary keydowns, trap nothing: Tab
+  // still leaves. Space is left to the buttons, which already handle it.
+  const onKeydown = (event: KeyboardEvent) => {
+    if (destroyed || event.defaultPrevented) return;
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    const target = event.target as Element | null;
+    const onSlider = target === chrome.progress;
+    const nowSeconds = elapsedMs / 1000;
+    switch (event.key) {
+      case ' ':
+      case 'k':
+        if (event.key === ' ' && !onSlider) return;
+        if (state === 'playing') pause();
+        else play();
+        break;
+      case 'ArrowLeft':
+        seek(nowSeconds - SEEK_STEP_SECONDS);
+        break;
+      case 'ArrowRight':
+        seek(nowSeconds + SEEK_STEP_SECONDS);
+        break;
+      case 'Home':
+        seek(0);
+        break;
+      case 'End':
+        seek(durationMs / 1000);
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+  };
+  if (controls !== 'none') host.addEventListener('keydown', onKeydown);
 
   // rAF stops in a hidden tab but the clock does not, so on return every missed
   // event would land in one frame. Pause while hidden and resume on return; a
@@ -319,6 +389,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
       resizeObserver?.disconnect();
       motionQuery?.removeEventListener?.('change', onMotionChange);
       doc.removeEventListener('visibilitychange', onVisibilityChange);
+      host.removeEventListener('keydown', onKeydown);
       for (const [name, value] of savedAttrs) {
         if (value === null) host.removeAttribute(name);
         else host.setAttribute(name, value);

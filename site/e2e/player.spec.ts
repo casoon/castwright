@@ -67,6 +67,15 @@ test.describe('<castwright-demo> on the demo page', () => {
     await expect(playPause).not.toHaveAttribute('aria-label', before ?? '');
   });
 
+  test('the progress bar is a keyboard-operable seek slider', async ({ page }) => {
+    const demo = await firstLiveDemo(page);
+    const slider = demo.locator('[role="slider"]');
+    await expect(slider).toHaveAccessibleName('Seek');
+    await slider.focus();
+    await slider.press('End');
+    await expect(demo.locator('.xterm-rows')).toContainText(FIRST_DEMO_TEXT, { timeout: 10_000 });
+  });
+
   test('the terminal is not a keyboard trap', async ({ page }) => {
     const demo = await firstLiveDemo(page);
     const textarea = demo.locator('.xterm textarea');
@@ -113,6 +122,26 @@ test.describe('prefers-reduced-motion', () => {
       (el: HTMLElement & { player?: { state: string } }) => el.player?.state,
     );
     expect(state).toBe('finished');
+  });
+});
+
+test.describe('prefers-reduced-motion at runtime', () => {
+  test('switching it on stops a playing demo and shows the final frame', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('demo/');
+    const demo = await firstLiveDemo(page);
+    await demo.evaluate((el: HTMLElement & { player?: { restart(): void; play(): void } }) => {
+      el.player?.restart();
+      el.player?.play();
+    });
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect
+      .poll(() =>
+        demo.evaluate((el: HTMLElement & { player?: { state: string } }) => el.player?.state),
+      )
+      .toBe('finished');
+    await expect(demo.locator('.xterm-rows')).toContainText(FIRST_DEMO_TEXT, { timeout: 10_000 });
   });
 });
 
