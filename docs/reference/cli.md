@@ -9,11 +9,11 @@ Errors go to stderr, results to stdout, so the commands compose.
 ## build
 
 ```
-castwright build <file> [-o <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--start final|beginning] [--allow-exec [--record]]
+castwright build <file> [-o|--out <dir>] [--format cast|svg|gif|mp4] [--no-chrome] [--loop-delay <ms>] [--start final|beginning] [--allow-exec [--record]]
 ```
 
 Compiles a `*.terminal.yaml` — or a [VHS `.tape`](../tape/) — to `<dir>/<name>.<format>`
-and prints the path. `-o` defaults to `dist`, `--format` to `cast`.
+and prints the path. `-o` (long form `--out`) defaults to `dist`, `--format` to `cast`.
 
 ```
 $ castwright build demo.terminal.yaml
@@ -69,6 +69,8 @@ missing tool is reported with an install hint and a non-zero exit.
 
 ### exec: steps
 
+`exec` is not supported on Windows: the build stops with an error there.
+
 | Option | Effect |
 |---|---|
 | `--allow-exec` | Lets [`exec`](../dsl/#exec) steps run their commands. Without it, a file containing one fails to build. |
@@ -104,10 +106,10 @@ file list, and a shell has already expanded `*.terminal.yaml` before the process
 ## dev
 
 ```
-castwright dev <file> [--port <n>] [--allow-exec]
+castwright dev <file> [-p|--port <n>] [--allow-exec]
 ```
 
-Serves one demo and reloads it on save. Edit the YAML, watch the terminal in the browser
+Serves one demo and reloads it on save (`-p` is the short form of `--port`). Edit the YAML, watch the terminal in the browser
 change.
 
 `dev` needs Vite **and** `@casoon/castwright-player`: it serves a real page with a real
