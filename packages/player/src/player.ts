@@ -27,6 +27,18 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
 
   injectStyles(doc);
 
+  // What mount() overwrites on the host, so destroy() can put it back. Notably
+  // --castwright-reserved-height: the Astro component sets it inline, and a
+  // re-inserted element must not lose its pre-hydration reservation.
+  const savedAttrs = ['role', 'aria-label', 'data-chrome', 'data-controls'].map(
+    (name) => [name, host.getAttribute(name)] as const,
+  );
+  const savedStyles = [
+    '--castwright-cast-bg',
+    '--castwright-natural-width',
+    '--castwright-reserved-height',
+  ].map((name) => [name, host.style.getPropertyValue(name)] as const);
+
   const timeline = buildTimeline(cast);
   const durationMs = timeline.durationMs;
   const loopDelayMs = options.loopDelayMs ?? DEFAULT_LOOP_DELAY_MS;
@@ -166,7 +178,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
 
   function tick(): void {
     if (destroyed || state !== 'playing') return;
-    elapsedMs = Date.now() - startedAt;
+    elapsedMs = performance.now() - startedAt;
 
     cursor = replay(timeline, cursor, elapsedMs, sink);
 
@@ -184,7 +196,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     if (destroyed || state === 'playing') return;
     clearLoopTimer();
     if (state === 'finished') restart();
-    startedAt = Date.now() - elapsedMs;
+    startedAt = performance.now() - elapsedMs;
     state = 'playing';
     render();
     rafId = win.requestAnimationFrame(tick);
@@ -246,13 +258,33 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     play();
   });
 
+  // rAF stops in a hidden tab but the clock does not, so on return every missed
+  // event would land in one frame. Pause while hidden and resume on return; a
+  // loop hold is cancelled too, or its timer would restart the demo unseen.
+  let resumeOnShow = false;
+  const onVisibilityChange = () => {
+    if (destroyed) return;
+    if (doc.hidden) {
+      if (state === 'playing' || (state === 'finished' && loopTimer !== undefined)) {
+        resumeOnShow = true;
+        pause();
+      }
+    } else if (resumeOnShow) {
+      resumeOnShow = false;
+      play();
+    }
+  };
+  doc.addEventListener('visibilitychange', onVisibilityChange);
+
   // Reduced motion switched on while the demo is running: stop animating and
   // show the end state, as if it had been on at load. An explicit
   // `reducedMotion` option pins the mode, so the query is not consulted.
   const motionQuery =
     options.reducedMotion === undefined ? win.matchMedia?.(REDUCED_MOTION_QUERY) : undefined;
   const onMotionChange = (event: MediaQueryListEvent) => {
-    if (event.matches && !destroyed) showFinalFrame();
+    if (!event.matches || destroyed) return;
+    resumeOnShow = false;
+    showFinalFrame();
   };
   motionQuery?.addEventListener?.('change', onMotionChange);
 
@@ -286,6 +318,15 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
       clearLoopTimer();
       resizeObserver?.disconnect();
       motionQuery?.removeEventListener?.('change', onMotionChange);
+      doc.removeEventListener('visibilitychange', onVisibilityChange);
+      for (const [name, value] of savedAttrs) {
+        if (value === null) host.removeAttribute(name);
+        else host.setAttribute(name, value);
+      }
+      for (const [name, value] of savedStyles) {
+        if (value === '') host.style.removeProperty(name);
+        else host.style.setProperty(name, value);
+      }
       terminal.dispose();
     },
   };

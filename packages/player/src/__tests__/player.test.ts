@@ -547,3 +547,62 @@ describe('mount — prefers-reduced-motion changing at runtime', () => {
     expect(motion.listeners.size).toBe(0);
   });
 });
+
+describe('mount — hidden tabs', () => {
+  function setHidden(hidden: boolean) {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+    document.dispatchEvent(new Event('visibilitychange'));
+  }
+
+  afterEach(() => {
+    Reflect.deleteProperty(document, 'hidden');
+  });
+
+  it('pauses while the tab is hidden and resumes without dumping the missed time', async () => {
+    const handle = mountWith({ autoplay: true });
+    await vi.advanceTimersByTimeAsync(200);
+    setHidden(true);
+    expect(handle.state).toBe('paused');
+
+    await vi.advanceTimersByTimeAsync(60_000);
+    setHidden(false);
+    expect(handle.state).toBe('playing');
+    expect(terminal.screen()).not.toContain('done');
+  });
+
+  it('does not restart a loop while hidden', async () => {
+    const handle = mountWith({ autoplay: true, loop: true, loopDelayMs: 500 });
+    await vi.advanceTimersByTimeAsync(1100);
+    setHidden(true);
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(handle.state).toBe('finished');
+    setHidden(false);
+    expect(handle.state).toBe('playing');
+  });
+
+  it('stops listening on destroy', async () => {
+    const handle = mountWith({ autoplay: true });
+    handle.destroy();
+    setHidden(true);
+    setHidden(false);
+    expect(handle.state).toBe('playing');
+  });
+});
+
+describe('mount — destroy cleans the host', () => {
+  it('restores the attributes and custom properties mount() set', () => {
+    host.setAttribute('aria-label', 'mine');
+    host.style.setProperty('--castwright-reserved-height', '300px');
+    const handle = mountWith();
+    expect(host.getAttribute('role')).toBe('group');
+    expect(host.style.getPropertyValue('--castwright-reserved-height')).toBe('0');
+
+    handle.destroy();
+    expect(host.hasAttribute('role')).toBe(false);
+    expect(host.hasAttribute('data-chrome')).toBe(false);
+    expect(host.hasAttribute('data-controls')).toBe(false);
+    expect(host.getAttribute('aria-label')).toBe('mine');
+    expect(host.style.getPropertyValue('--castwright-reserved-height')).toBe('300px');
+    expect(host.style.getPropertyValue('--castwright-cast-bg')).toBe('');
+  });
+});

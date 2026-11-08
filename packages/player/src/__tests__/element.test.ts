@@ -378,3 +378,47 @@ describe('<castwright-demo> — removed and re-inserted', () => {
     await vi.waitFor(() => expect(mount).toHaveBeenCalledOnce());
   });
 });
+
+describe('<castwright-demo> — reactive configuration', () => {
+  it('rebuilds the player when src changes after mount', async () => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, status: 200, text: async () => castNdjson })),
+    );
+    const el = element();
+    el.setAttribute('src', '/a.cast');
+    document.body.appendChild(el);
+    await vi.waitFor(() => expect(mount).toHaveBeenCalledTimes(1));
+
+    el.setAttribute('src', '/b.cast');
+    await vi.waitFor(() => expect(mount).toHaveBeenCalledTimes(2));
+    expect(fetch).toHaveBeenLastCalledWith('/b.cast', { signal: expect.any(AbortSignal) });
+  });
+
+  it('rebuilds the player when cast is set after mount', async () => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    const el = element();
+    el.cast = cast;
+    document.body.appendChild(el);
+    await vi.waitFor(() => expect(mount).toHaveBeenCalledTimes(1));
+
+    const next = { ...cast, events: [[0, 'o', 'other'] as [number, 'o', string]] };
+    el.cast = next;
+    await vi.waitFor(() => expect(mount).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(mount).mock.calls[1]?.[1]).toBe(next);
+  });
+
+  it('does nothing for attribute changes before the first mount', async () => {
+    const observed = installFakeIntersectionObserver();
+    const el = element();
+    el.innerHTML = `<script type="application/json" data-castwright-cast>${castJson}</script>`;
+    document.body.appendChild(el);
+    el.setAttribute('loop', '');
+    expect(mount).not.toHaveBeenCalled();
+
+    observed[0]?.trigger(true);
+    await vi.waitFor(() => expect(mount).toHaveBeenCalledOnce());
+    expect(vi.mocked(mount).mock.calls[0]?.[2].loop).toBe(true);
+  });
+});

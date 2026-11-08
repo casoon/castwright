@@ -60,9 +60,41 @@ const MAX_LOOP_DELAY_MS = 3_600_000;
 const ElementBase: typeof HTMLElement =
   typeof HTMLElement === 'undefined' ? (class {} as unknown as typeof HTMLElement) : HTMLElement;
 
+/** Attributes that configure the demo; changing one rebuilds a mounted player. */
+const OBSERVED = [
+  'src',
+  'autoplay',
+  'loop',
+  'loop-delay',
+  'poster',
+  'cols',
+  'rows',
+  'label',
+  'title-text',
+  'chrome',
+  'controls',
+];
+
 export class CastwrightDemoElement extends ElementBase {
-  /** Set programmatically to skip both the inline script and the fetch. */
-  cast?: Cast;
+  static get observedAttributes(): string[] {
+    return OBSERVED;
+  }
+
+  #cast: Cast | undefined;
+  #visible = false;
+
+  /**
+   * Set programmatically to skip both the inline script and the fetch. Setting
+   * it on a mounted element replaces the demo.
+   */
+  get cast(): Cast | undefined {
+    return this.#cast;
+  }
+
+  set cast(value: Cast | undefined) {
+    this.#cast = value;
+    this.#reload();
+  }
 
   #handle: PlayerHandle | undefined;
   #observer: IntersectionObserver | undefined;
@@ -74,7 +106,29 @@ export class CastwrightDemoElement extends ElementBase {
   /** The light-DOM children as they were before mount() rearranged them. */
   #fallback: ChildNode[] | undefined;
 
+  attributeChangedCallback(_name: string, oldValue: string | null, newValue: string | null): void {
+    if (oldValue !== newValue) this.#reload();
+  }
+
+  /**
+   * A configuration change on a live element: tear the player down and start
+   * again with the new values. Before the first mount there is nothing to
+   * rebuild — #start() reads them when it runs.
+   */
+  #reload(): void {
+    if (!this.#started || !this.isConnected) return;
+    this.#teardown();
+    if (typeof IntersectionObserver === 'undefined' || this.#visible) void this.#start();
+  }
+
   connectedCallback(): void {
+    // A property set before the element was upgraded sits on the instance and
+    // shadows the accessor; route it through the setter.
+    if (Object.hasOwn(this, 'cast')) {
+      const early = (this as { cast?: Cast }).cast;
+      Reflect.deleteProperty(this, 'cast');
+      this.#cast = early;
+    }
     if (this.#started) return;
 
     // Lazy init: wait for first intersection where the API exists. Where it
@@ -88,6 +142,7 @@ export class CastwrightDemoElement extends ElementBase {
     this.#observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
+          this.#visible = entry.isIntersecting;
           if (entry.isIntersecting) {
             if (!this.#started) void this.#start();
             else if (this.#resumeOnVisible) {
@@ -114,6 +169,11 @@ export class CastwrightDemoElement extends ElementBase {
   disconnectedCallback(): void {
     this.#observer?.disconnect();
     this.#observer = undefined;
+    this.#visible = false;
+    this.#teardown();
+  }
+
+  #teardown(): void {
     // Order matters: bump first, so an in-flight #start() sees a stale
     // generation even if the abort does not reach it before it resolves.
     this.#generation++;
@@ -174,7 +234,7 @@ export class CastwrightDemoElement extends ElementBase {
    *   3. `src`, fetched at runtime, for pages with no bundler.
    */
   async #resolveCast(signal: AbortSignal): Promise<Cast> {
-    if (this.cast) return this.cast;
+    if (this.#cast) return this.#cast;
 
     const inline = this.querySelector('script[type="application/json"][data-castwright-cast]');
     if (inline?.textContent) return deserializeCast(inline.textContent);
