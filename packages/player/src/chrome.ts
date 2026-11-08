@@ -8,6 +8,8 @@ export interface ChromeOptions {
   title: string | undefined;
   chrome: ChromeMode;
   controls: ControlsMode;
+  speedControl?: boolean;
+  copy?: boolean;
 }
 
 export interface Chrome {
@@ -22,6 +24,12 @@ export interface Chrome {
   progress: HTMLElement;
   progressBar: HTMLElement;
   time: HTMLElement;
+  /** Present only with `speedControl`. */
+  speed: HTMLButtonElement | undefined;
+  /** Present only with `copy`. */
+  copy: HTMLButtonElement | undefined;
+  /** The aria-live region that confirms a copy. Present only with `copy`. */
+  copyStatus: HTMLElement | undefined;
   fallback: HTMLElement;
 }
 
@@ -105,12 +113,44 @@ export function buildChrome(host: HTMLElement, options: ChromeOptions): Chrome {
 
   transport.append(playPause, restart, progress, time);
 
+  let speed: HTMLButtonElement | undefined;
+  if (options.speedControl && options.controls !== 'none') {
+    speed = button(doc, 'speed', 'Playback speed', '1×');
+    transport.append(speed);
+  }
+
+  let copy: HTMLButtonElement | undefined;
+  let copyStatus: HTMLElement | undefined;
+  if (options.copy && options.controls !== 'none') {
+    copy = button(doc, 'copy', 'Copy terminal text', '⧉');
+    // Always in the DOM (empty) so assistive technology registers the live
+    // region before its text changes.
+    copyStatus = doc.createElement('span');
+    copyStatus.className = 'castwright-copy-status';
+    copyStatus.setAttribute('role', 'status');
+    copyStatus.setAttribute('aria-live', 'polite');
+    transport.append(copy, copyStatus);
+  }
+
   if (options.chrome === 'window') host.append(bar);
   host.append(screen);
   if (options.controls !== 'none') host.append(transport);
   host.append(fallback);
 
-  return { root: host, screen, scaler, playPause, restart, progress, progressBar, time, fallback };
+  return {
+    root: host,
+    screen,
+    scaler,
+    playPause,
+    restart,
+    progress,
+    progressBar,
+    time,
+    speed,
+    copy,
+    copyStatus,
+    fallback,
+  };
 }
 
 export function formatClock(seconds: number): string {

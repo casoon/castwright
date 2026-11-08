@@ -201,3 +201,50 @@ test.describe('under a strict style-src', () => {
     );
   });
 });
+
+test.describe('speed and copy controls', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('demo/');
+  });
+
+  test('the speed button is labelled, keyboard-operable and at least 24px', async ({ page }) => {
+    const demo = page.locator('castwright-demo').first();
+    await demo.scrollIntoViewIfNeeded();
+    await demo.evaluate((el) => el.setAttribute('speed-control', ''));
+    const speed = demo.locator('[data-action="speed"]');
+    await expect(speed).toHaveAccessibleName('Playback speed 1×, change');
+    await speed.focus();
+    await speed.press('Enter');
+    await expect(speed).toHaveAccessibleName('Playback speed 1.5×, change');
+    const box = await speed.boundingBox();
+    expect(box?.width).toBeGreaterThanOrEqual(24);
+    expect(box?.height).toBeGreaterThanOrEqual(24);
+  });
+
+  test('the copy button copies the text and confirms in a live region', async ({ page }) => {
+    const demo = page.locator('castwright-demo').first();
+    await demo.scrollIntoViewIfNeeded();
+    await page.evaluate(() => {
+      const w = window as unknown as { copied: string };
+      w.copied = '';
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          writeText: async (text: string) => {
+            w.copied = text;
+          },
+        },
+      });
+    });
+    await demo.evaluate((el) => el.setAttribute('copy', ''));
+    const copy = demo.locator('[data-action="copy"]');
+    await expect(copy).toHaveAccessibleName('Copy terminal text');
+    await copy.focus();
+    await copy.press('Enter');
+    const status = demo.locator('.castwright-copy-status');
+    await expect(status).toHaveText('Copied');
+    await expect(status).toHaveAttribute('aria-live', 'polite');
+    const copied = await page.evaluate(() => (window as unknown as { copied: string }).copied);
+    expect(copied).toContain(FIRST_DEMO_TEXT);
+  });
+});

@@ -54,6 +54,12 @@ export interface PlayerOptions {
   autoplay?: boolean;
   chrome?: ChromeMode;
   controls?: ControlsMode;
+  /** Playback rate, 0.25–4. Default 1. Scales elapsed time, never the cast. */
+  speed?: number;
+  /** Show a labelled speed button in the transport row. Off by default. */
+  speedControl?: boolean;
+  /** Show a button that copies the final text to the clipboard. Off by default. */
+  copy?: boolean;
   loop?: boolean;
   /** Hold on the final frame before looping. A loop without it reads as a glitch. */
   loopDelayMs?: number;
@@ -79,6 +85,8 @@ export interface PlayerHandle {
   restart(): void;
   /** Seek is replay: the screen is reset and every byte up to `seconds` is re-fed. */
   seek(seconds: number): void;
+  /** Playback rate. Setting it mid-playback keeps the current cast position. */
+  speed: number;
   readonly state: PlayerState;
   readonly durationSeconds: number;
   destroy(): void;

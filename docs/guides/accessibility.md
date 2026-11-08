@@ -80,6 +80,14 @@ per frame, so assistive technology is not flooded. The hit area is 24 px tall
 Space). The shortcuts exist only while focus is inside the demo — never page-wide, in
 line with SC 2.1.4 — and Tab always leaves.
 
+## Speed and copy buttons
+
+The optional speed and copy buttons are native `<button>`s in the transport row: named
+("Playback speed 1×, change", "Copy terminal text"), reachable with Tab, operable with
+Enter/Space, and at least 32 px square (SC 2.5.8). The copy confirmation is a visible text
+that is also an `aria-live="polite"` status, so the result is announced without moving
+focus. Both are absent with `controls="none"`.
+
 ## The terminal is not a keyboard trap
 
 xterm.js creates a textarea to capture input. Since a demo is a presentation and not an
