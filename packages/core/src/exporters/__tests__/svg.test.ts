@@ -225,3 +225,38 @@ describe('renderSvg', () => {
     expect(svg).not.toContain('<circle');
   });
 });
+
+describe('renderSvg — escaping and cursor', () => {
+  it('drops characters XML 1.0 forbids', async () => {
+    const svg = await renderSvg({
+      header: { ...header(), title: 'bad\x01ti\uFFFEtle\uD800' },
+      events: [[0, 'o', 'x']],
+    });
+    expect(svg).toContain('aria-label="badtitle"');
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: the point is to match them
+    expect(svg).not.toMatch(/[\x00-\x08\x0B\x0C\x0E-\x1F\uFFFE\uFFFF]/);
+  });
+
+  it('rejects theme colours that are not #rrggbb', async () => {
+    const theme = {
+      foreground: '#ffffff',
+      background: '#000000',
+      cursor: 'red;}</style>',
+      palette: [],
+    };
+    await expect(
+      renderSvg({ header: { ...header(), theme }, events: [[0, 'o', 'x']] }),
+    ).rejects.toThrow(/invalid theme colour/);
+  });
+
+  it('draws the cursor shape selected with DECSCUSR', async () => {
+    const draw = (seq: string) => renderSvg({ header: header(), events: [[0, 'o', `${seq}ab`]] });
+    expect(await draw('')).toContain('<rect class="cur" x="16.8" y="0" width="8.4" height="18"/>');
+    expect(await draw('\x1b[6 q')).toContain(
+      '<rect class="cur" x="16.8" y="0" width="2" height="18"/>',
+    );
+    expect(await draw('\x1b[4 q')).toContain(
+      '<rect class="cur" x="16.8" y="16" width="8.4" height="2"/>',
+    );
+  });
+});

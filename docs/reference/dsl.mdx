@@ -45,7 +45,7 @@ steps:            # required
 | `rows` | `24` | Written to the asciicast header. |
 | `theme` | `default` | One of the seven bundled names; see [Theming](../theming/). |
 | `prompt` | `"$ "` | Supports markup, so a coloured prompt is a one-liner. |
-| `cursor` | `block` | `block`, `bar` or `underline`; a mapping adds `blink: false`. |
+| `cursor` | `block` | `block`, `bar` or `underline`; a mapping adds `blink: false`. Written to the cast as DECSCUSR at t=0, which players that support it follow; the SVG export draws the shape but does not blink. |
 
 ### defaults
 
