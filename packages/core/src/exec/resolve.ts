@@ -206,7 +206,7 @@ function toSteps(recording: Recording): Step[] {
 
 // Things that should not end up in a published demo. A hint, not a scanner:
 // it catches the common shapes and says so, it does not promise anything.
-const SENSITIVE: [RegExp, string][] = [
+export const SENSITIVE: [RegExp, string][] = [
   [/\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}|\bgithub_pat_[A-Za-z0-9_]{20,}/, 'a GitHub token'],
   [/\bAKIA[0-9A-Z]{16}\b/, 'an AWS access key'],
   [/\bxox[abprs]-[A-Za-z0-9-]{10,}/, 'a Slack token'],

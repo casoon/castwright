@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // castwright CLI — see docs/reference/cli.md.
 
+import { readFileSync } from 'node:fs';
 import { ExternalToolError } from '../exporters/raster.js';
 import { CastwrightParseError } from '../parser/errors.js';
-import { parseBuildArgs, runBuild } from './build.js';
-import { parseDevArgs } from './dev-args.js';
+import { USAGE as BUILD_USAGE, parseBuildArgs, runBuild } from './build.js';
+import { USAGE as DEV_USAGE, parseDevArgs } from './dev-args.js';
 import { CliUsageError } from './errors.js';
-import { parseValidateArgs, runValidate } from './validate.js';
+import { parseValidateArgs, runValidate, USAGE as VALIDATE_USAGE } from './validate.js';
 
 const USAGE = `castwright — declarative terminal demos for the web
 
@@ -15,8 +16,22 @@ Usage:
   castwright validate <file>...
   castwright dev <file> [--port <n>] [--allow-exec]
 
+  castwright <command> --help
+  castwright --version
   castwright --help
 `;
+
+const COMMAND_USAGE: Record<string, string> = {
+  build: BUILD_USAGE,
+  validate: VALIDATE_USAGE,
+  dev: DEV_USAGE,
+};
+
+function version(): string {
+  // dist/cli/index.js and src/cli/index.ts both sit two levels below package.json.
+  const manifest = new URL('../../package.json', import.meta.url);
+  return (JSON.parse(readFileSync(manifest, 'utf8')) as { version: string }).version;
+}
 
 function fail(message: string): never {
   process.stderr.write(`${message}\n`);
@@ -32,6 +47,16 @@ function main(argv: string[]): void {
     return;
   }
 
+  if (command === '--version' || command === '-v' || command === '-V') {
+    process.stdout.write(`${version()}\n`);
+    return;
+  }
+  const commandUsage = COMMAND_USAGE[command];
+  if (commandUsage !== undefined && rest.some((arg) => arg === '--help' || arg === '-h')) {
+    process.stdout.write(`${commandUsage}\n`);
+    return;
+  }
+
   try {
     switch (command) {
       case 'build': {
@@ -42,21 +67,17 @@ function main(argv: string[]): void {
         return;
       }
       case 'validate': {
-        const files = parseValidateArgs(rest);
-        const ok = runValidate(files);
-        process.exitCode = ok ? 0 : 1;
+        const { files, allowShowOutsideRoot } = parseValidateArgs(rest);
+        void runValidate(files, { allowShowOutsideRoot }).then((ok) => {
+          process.exitCode = ok ? 0 : 1;
+        });
         return;
       }
       case 'dev': {
         const options = parseDevArgs(rest);
         // Imported lazily: `dev` pulls in Vite, and `build`/`validate` must
         // keep working in a project that never installed it.
-        void import('./dev.js')
-          .then(({ runDev }) => runDev(options))
-          .catch((error: unknown) => {
-            if (error instanceof CliUsageError) fail(error.message);
-            throw error;
-          });
+        void import('./dev.js').then(({ runDev }) => runDev(options)).catch(handleError);
         return;
       }
       default:

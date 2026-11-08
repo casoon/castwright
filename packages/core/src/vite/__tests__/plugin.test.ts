@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -50,13 +50,61 @@ describe('castwright vite plugin — show:', () => {
       const id = join(dir, 'demo.terminal.yaml');
       const code = 'version: 1\nterminal: { cols: 40, rows: 5 }\nsteps:\n  - show: snippet.ts\n';
       const ctx = context();
-      const result = await castwright().transform?.call(ctx, code, id);
+      const result = await castwright({ root: dir }).transform?.call(ctx, code, id);
 
       expect(ctx.watched).toEqual([join(dir, 'snippet.ts')]);
       expect(result?.code).toContain('const');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe('castwright vite plugin — show: edge cases', () => {
+  const code = 'version: 1\nterminal: { cols: 40, rows: 5 }\nsteps:\n  - show: later.ts\n';
+
+  it('watches a missing show: file, so creating it recompiles the demo', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'castwright-vite-missing-'));
+    try {
+      const ctx = context();
+      await expect(
+        castwright({ root: dir }).transform?.call(ctx, code, join(dir, 'demo.terminal.yaml')),
+      ).rejects.toThrow(/file not found/);
+      expect(ctx.watched).toEqual([join(dir, 'later.ts')]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses a show: file outside the Vite root', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'castwright-vite-root-'));
+    try {
+      mkdirSync(join(dir, 'app'));
+      writeFileSync(join(dir, 'later.ts'), 'x\n');
+      const demo = join(dir, 'app', 'demo.terminal.yaml');
+      const outside = code.replace('later.ts', '../later.ts');
+      await expect(
+        castwright({ root: join(dir, 'app') }).transform?.call(context(), outside, demo),
+      ).rejects.toThrow(/outside the project root/);
+      const result = await castwright({
+        root: join(dir, 'app'),
+        allowShowOutsideRoot: true,
+      }).transform?.call(context(), outside, demo);
+      expect(result?.code).toContain('cast');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('castwright vite plugin — warnings', () => {
+  it('forwards parse warnings through this.warn', async () => {
+    const warnings: string[] = [];
+    const ctx = { ...context(), warn: (message: string) => warnings.push(message) };
+    const code =
+      'version: 1\nterminal: { cols: 5, rows: 24 }\nsteps:\n  - output: "this is way too wide"\n';
+    await castwright().transform?.call(ctx, code, '/d/x.terminal.yaml');
+    expect(warnings).toEqual([expect.stringContaining('/d/x.terminal.yaml:')]);
   });
 });
 
