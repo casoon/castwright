@@ -74,10 +74,12 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     options.label ?? (title ? `Terminal demo: ${title}` : 'Terminal demo'),
   );
 
+  const initialCols = options.cols ?? cast.header.width;
+  const initialRows = options.rows ?? cast.header.height;
   const createTerminal = options.createTerminal ?? createXtermTerminal;
   const terminal: TerminalAdapter = createTerminal({
-    cols: options.cols ?? cast.header.width,
-    rows: options.rows ?? cast.header.height,
+    cols: initialCols,
+    rows: initialRows,
     ...(cast.header.theme ? { theme: cast.header.theme } : {}),
   });
   terminal.open(chrome.scaler);
@@ -97,6 +99,22 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
   const resizeObserver =
     typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(() => fit());
   resizeObserver?.observe(host);
+
+  // What replay writes into: an asciicast `r` event resizes the terminal, and
+  // the scale has to follow or the frame keeps the previous size's geometry.
+  const sink = {
+    write: (data: string) => terminal.write(data),
+    resize: (cols: number, rows: number) => {
+      terminal.resize?.(cols, rows);
+      fitToWidth(host, chrome.screen, chrome.scaler);
+    },
+  };
+
+  /** RIS does not change the geometry, so undo any `r` event's resize too. */
+  function resetTerminal(): void {
+    terminal.reset();
+    sink.resize(initialCols, initialRows);
+  }
 
   let state: PlayerState = 'idle';
   let elapsedMs = 0;
@@ -148,7 +166,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     if (destroyed || state !== 'playing') return;
     elapsedMs = Date.now() - startedAt;
 
-    cursor = replay(timeline, cursor, elapsedMs, terminal);
+    cursor = replay(timeline, cursor, elapsedMs, sink);
 
     if (cursor.index >= timeline.output.length && elapsedMs >= durationMs) {
       elapsedMs = durationMs;
@@ -185,7 +203,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     if (destroyed) return;
     cancelFrame();
     clearLoopTimer();
-    terminal.reset();
+    resetTerminal();
     elapsedMs = 0;
     cursor = { index: 0, resizeIndex: 0 };
     state = 'idle';
@@ -199,8 +217,8 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     const wasPlaying = state === 'playing';
     cancelFrame();
     clearLoopTimer();
-    terminal.reset();
-    cursor = replay(timeline, { index: 0, resizeIndex: 0 }, targetMs, terminal);
+    resetTerminal();
+    cursor = replay(timeline, { index: 0, resizeIndex: 0 }, targetMs, sink);
     elapsedMs = targetMs;
     state = wasPlaying ? 'paused' : state === 'finished' ? 'paused' : state;
     render();
@@ -208,8 +226,8 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
   }
 
   function showFinalFrame(): void {
-    terminal.reset();
-    cursor = replay(timeline, { index: 0, resizeIndex: 0 }, durationMs, terminal);
+    resetTerminal();
+    cursor = replay(timeline, { index: 0, resizeIndex: 0 }, durationMs, sink);
     elapsedMs = durationMs;
     state = 'finished';
     render();

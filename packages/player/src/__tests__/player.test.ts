@@ -435,3 +435,48 @@ describe('mount — the window body', () => {
     expect(host.style.getPropertyValue('--castwright-cast-bg')).toBe('');
   });
 });
+
+describe('mount — terminal size after r events', () => {
+  const resizeCast: Cast = {
+    header: { version: 2, width: 80, height: 24 },
+    events: [
+      [0, 'o', 'a'],
+      [0.1, 'r', '120x40'],
+      [0.2, 'o', 'b'],
+    ],
+  };
+
+  it('restores the authored size when seek/restart replays from the start', () => {
+    const handle = mount(host, resizeCast, {
+      reducedMotion: false,
+      createTerminal: (init) => {
+        terminal = createFakeTerminal(init);
+        return terminal;
+      },
+    });
+    handle.seek(0.2);
+    expect(terminal.resizes.at(-1)).toEqual([120, 40]);
+
+    handle.seek(0.05);
+    expect(terminal.resizes.at(-1)).toEqual([80, 24]);
+
+    handle.seek(0.2);
+    handle.restart();
+    expect(terminal.resizes.at(-1)).toEqual([80, 24]);
+  });
+
+  it('restores the size to cols/rows overrides, not the header', () => {
+    const handle = mount(host, resizeCast, {
+      reducedMotion: false,
+      cols: 100,
+      rows: 30,
+      createTerminal: (init) => {
+        terminal = createFakeTerminal(init);
+        return terminal;
+      },
+    });
+    handle.seek(0.2);
+    handle.seek(0);
+    expect(terminal.resizes.at(-1)).toEqual([100, 30]);
+  });
+});
