@@ -76,6 +76,25 @@ test.describe('<castwright-demo> on the demo page', () => {
     await expect(demo.locator('.xterm-rows')).toContainText(FIRST_DEMO_TEXT, { timeout: 10_000 });
   });
 
+  test('dragging the seek bar scrubs, and keeps a paused demo paused', async ({ page }) => {
+    const demo = await firstLiveDemo(page);
+    await demo.evaluate((el: HTMLElement & { player?: { pause(): void } }) => el.player?.pause());
+    const slider = demo.locator('[role="slider"]');
+    await expect(slider).toHaveCSS('touch-action', 'pan-y');
+    const box = await slider.boundingBox();
+    if (!box) throw new Error('seek bar has no box');
+    const y = box.y + box.height / 2;
+    await page.mouse.move(box.x + 2, y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2, y, { steps: 5 });
+    await page.mouse.move(box.x + box.width + 40, y, { steps: 5 }); // past the end: capture holds
+    await page.mouse.up();
+    await expect(demo.locator('.xterm-rows')).toContainText(FIRST_DEMO_TEXT, { timeout: 10_000 });
+    expect(
+      await demo.evaluate((el: HTMLElement & { player?: { state: string } }) => el.player?.state),
+    ).not.toBe('playing');
+  });
+
   test('the terminal is not a keyboard trap', async ({ page }) => {
     const demo = await firstLiveDemo(page);
     const textarea = demo.locator('.xterm textarea');
@@ -199,5 +218,52 @@ test.describe('under a strict style-src', () => {
       'color',
       'rgb(243, 139, 168)',
     );
+  });
+});
+
+test.describe('speed and copy controls', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('demo/');
+  });
+
+  test('the speed button is labelled, keyboard-operable and at least 24px', async ({ page }) => {
+    const demo = page.locator('castwright-demo').first();
+    await demo.scrollIntoViewIfNeeded();
+    await demo.evaluate((el) => el.setAttribute('speed-control', ''));
+    const speed = demo.locator('[data-action="speed"]');
+    await expect(speed).toHaveAccessibleName('Playback speed 1×, change');
+    await speed.focus();
+    await speed.press('Enter');
+    await expect(speed).toHaveAccessibleName('Playback speed 1.5×, change');
+    const box = await speed.boundingBox();
+    expect(box?.width).toBeGreaterThanOrEqual(24);
+    expect(box?.height).toBeGreaterThanOrEqual(24);
+  });
+
+  test('the copy button copies the text and confirms in a live region', async ({ page }) => {
+    const demo = page.locator('castwright-demo').first();
+    await demo.scrollIntoViewIfNeeded();
+    await page.evaluate(() => {
+      const w = window as unknown as { copied: string };
+      w.copied = '';
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          writeText: async (text: string) => {
+            w.copied = text;
+          },
+        },
+      });
+    });
+    await demo.evaluate((el) => el.setAttribute('copy', ''));
+    const copy = demo.locator('[data-action="copy"]');
+    await expect(copy).toHaveAccessibleName('Copy terminal text');
+    await copy.focus();
+    await copy.press('Enter');
+    const status = demo.locator('.castwright-copy-status');
+    await expect(status).toHaveText('Copied');
+    await expect(status).toHaveAttribute('aria-live', 'polite');
+    const copied = await page.evaluate(() => (window as unknown as { copied: string }).copied);
+    expect(copied).toContain(FIRST_DEMO_TEXT);
   });
 });

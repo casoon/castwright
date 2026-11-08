@@ -15,6 +15,7 @@ export type {
   Cast,
   CastTheme,
   PlayerHandle,
+  PlayerMarker,
   PlayerOptions,
   PlayerState,
   TerminalAdapter,

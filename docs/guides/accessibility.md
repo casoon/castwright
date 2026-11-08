@@ -73,12 +73,22 @@ the console rather than letting it pass quietly.
 ## Seek bar and shortcuts
 
 The progress bar is a `role="slider"` named "Seek", focusable with Tab, with
-`aria-valuetext` such as "0:03 of 0:12". Its value attributes change once per second, not
+`aria-valuetext` such as "0:03 of 0:12" (with ", marker: <label>" appended once a marker
+has been passed; the marker ticks themselves are `aria-hidden`). Its value attributes change once per second, not
 per frame, so assistive technology is not flooded. The hit area is 24 px tall
 (SC 2.5.8). While focus is inside the demo: Left/Right seek 5 s, Home/End jump to start/end,
 `k` toggles play/pause, and Space does the same on the slider (buttons keep their native
-Space). The shortcuts exist only while focus is inside the demo — never page-wide, in
+Space). Pointer dragging is an addition, never the only way: every seek is also available
+from the keyboard. The shortcuts exist only while focus is inside the demo — never page-wide, in
 line with SC 2.1.4 — and Tab always leaves.
+
+## Speed and copy buttons
+
+The optional speed and copy buttons are native `<button>`s in the transport row: named
+("Playback speed 1×, change", "Copy terminal text"), reachable with Tab, operable with
+Enter/Space, and at least 32 px square (SC 2.5.8). The copy confirmation is a visible text
+that is also an `aria-live="polite"` status, so the result is announced without moving
+focus. Both are absent with `controls="none"`.
 
 ## The terminal is not a keyboard trap
 

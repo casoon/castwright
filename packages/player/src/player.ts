@@ -10,15 +10,31 @@ import { fitToWidth } from './fit.js';
 import { injectStyles } from './styles.js';
 import { toXtermTheme } from './theme.js';
 import { buildTimeline, type ReplayCursor, replay, type Timeline } from './timeline.js';
-import type { Cast, PlayerHandle, PlayerOptions, PlayerState, TerminalAdapter } from './types.js';
+import type {
+  Cast,
+  PlayerHandle,
+  PlayerMarker,
+  PlayerOptions,
+  PlayerState,
+  TerminalAdapter,
+} from './types.js';
 import { createXtermTerminal } from './xterm-adapter.js';
 
 const DEFAULT_LOOP_DELAY_MS = 2000;
+
+const MIN_SPEED = 0.25;
+const MAX_SPEED = 4;
+const SPEED_STEPS = [0.5, 1, 1.5, 2];
+const COPY_CONFIRM_MS = 2000;
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 function prefersReducedMotion(win: Window): boolean {
   return win.matchMedia?.(REDUCED_MOTION_QUERY).matches ?? false;
+}
+
+function clampSpeed(value: number): number {
+  return Number.isFinite(value) ? Math.min(MAX_SPEED, Math.max(MIN_SPEED, value)) : 1;
 }
 
 export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}): PlayerHandle {
@@ -74,6 +90,10 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     title,
     chrome: options.chrome ?? 'window',
     controls,
+    speedControl: options.speedControl === true,
+    // Without a Clipboard API (insecure context, old browser) the button would
+    // do nothing, so it is not offered.
+    copy: options.copy === true && typeof win.navigator?.clipboard?.writeText === 'function',
   });
 
   // So the window body matches the terminal rather than the page behind it —
@@ -146,8 +166,34 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
   let startedAt = 0;
   let destroyed = false;
   let announcedSecond = -1;
+  let speed = clampSpeed(options.speed ?? 1);
 
   chrome.progress.setAttribute('aria-valuemax', String(Math.floor(durationMs / 1000)));
+
+  const markers: readonly PlayerMarker[] = Object.freeze(
+    timeline.markers.map((m) => Object.freeze({ label: m.data, time: m.timeMs / 1000 })),
+  );
+  // Decorative ticks: the slider's value text names the marker for assistive
+  // technology, so the ticks themselves stay out of the accessibility tree.
+  if (controls !== 'none' && durationMs > 0) {
+    for (const marker of markers) {
+      const tick = doc.createElement('i');
+      tick.className = 'castwright-marker';
+      tick.setAttribute('aria-hidden', 'true');
+      tick.style.setProperty(
+        'inset-inline-start',
+        `${(Math.min(1, (marker.time * 1000) / durationMs) * 100).toFixed(2)}%`,
+      );
+      chrome.progress.appendChild(tick);
+    }
+  }
+
+  /** The latest marker at or before `seconds`, for the slider's value text. */
+  function markerAt(seconds: number): PlayerMarker | undefined {
+    let found: PlayerMarker | undefined;
+    for (const marker of markers) if (marker.time <= seconds) found = marker;
+    return found;
+  }
 
   /** DOM events on the host, so integrations need not poll `.player`. */
   function emit(name: string): void {
@@ -170,14 +216,20 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     if (second !== announcedSecond) {
       announcedSecond = second;
       chrome.progress.setAttribute('aria-valuenow', String(second));
+      const marker = markerAt(elapsedMs / 1000);
       chrome.progress.setAttribute(
         'aria-valuetext',
-        `${formatClock(elapsedMs / 1000)} of ${formatClock(durationMs / 1000)}`,
+        `${formatClock(elapsedMs / 1000)} of ${formatClock(durationMs / 1000)}` +
+          (marker ? `, marker: ${marker.label}` : ''),
       );
     }
     const playing = state === 'playing';
     chrome.playPause.textContent = playing ? '⏸' : '▶';
     chrome.playPause.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    if (chrome.speed) {
+      chrome.speed.textContent = `${speed}×`;
+      chrome.speed.setAttribute('aria-label', `Playback speed ${speed}×, change`);
+    }
   }
 
   function cancelFrame(): void {
@@ -211,7 +263,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
 
   function tick(): void {
     if (destroyed || state !== 'playing') return;
-    elapsedMs = performance.now() - startedAt;
+    elapsedMs = (performance.now() - startedAt) * speed;
 
     cursor = replay(timeline, cursor, elapsedMs, sink);
 
@@ -229,7 +281,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     if (destroyed || state === 'playing') return;
     clearLoopTimer();
     if (state === 'finished') restart();
-    startedAt = performance.now() - elapsedMs;
+    startedAt = performance.now() - elapsedMs / speed;
     state = 'playing';
     render();
     rafId = win.requestAnimationFrame(tick);
@@ -293,12 +345,92 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     play();
   });
 
+  function setSpeed(value: number): void {
+    speed = clampSpeed(value);
+    // Re-anchor so the current cast position survives the rate change.
+    if (state === 'playing') startedAt = performance.now() - elapsedMs / speed;
+    render();
+  }
+
+  chrome.speed?.addEventListener('click', () => {
+    setSpeed(SPEED_STEPS.find((step) => step > speed) ?? SPEED_STEPS[0] ?? 1);
+  });
+
+  let copyTimer: ReturnType<typeof setTimeout> | undefined;
+  chrome.copy?.addEventListener('click', () => {
+    const status = chrome.copyStatus;
+    const announce = (text: string) => {
+      if (!status || destroyed) return;
+      status.textContent = text;
+      if (copyTimer !== undefined) clearTimeout(copyTimer);
+      copyTimer = setTimeout(() => {
+        copyTimer = undefined;
+        status.textContent = '';
+      }, COPY_CONFIRM_MS);
+    };
+    win.navigator.clipboard.writeText(chrome.fallback.textContent ?? '').then(
+      () => announce('Copied'),
+      () => announce('Copy failed'),
+    );
+  });
+
   const SEEK_STEP_SECONDS = 5;
-  chrome.progress.addEventListener('click', (event) => {
+  const DRAG_SEEK_INTERVAL_MS = 40;
+
+  function seekToClientX(clientX: number): void {
     const rect = chrome.progress.getBoundingClientRect();
     if (rect.width === 0) return;
-    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
     seek(ratio * (durationMs / 1000));
+  }
+
+  // Drag scrubbing: pointer events cover mouse, touch and pen. The pointer is
+  // captured so the drag survives leaving the 4px track, playback pauses while
+  // dragging (each seek is a full replay) and the previous play state returns
+  // on release. Keyboard seeking above is untouched.
+  let drag: { pointerId: number; wasPlaying: boolean; lastSeekAt: number } | undefined;
+  let swallowClick = false;
+  const progress = chrome.progress;
+
+  progress.addEventListener('pointerdown', (event) => {
+    if (destroyed || drag || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    drag = {
+      pointerId: event.pointerId,
+      wasPlaying: state === 'playing',
+      lastSeekAt: performance.now(),
+    };
+    progress.setPointerCapture?.(event.pointerId);
+    pause();
+    seekToClientX(event.clientX);
+  });
+  progress.addEventListener('pointermove', (event) => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const now = performance.now();
+    if (now - drag.lastSeekAt < DRAG_SEEK_INTERVAL_MS) return;
+    drag.lastSeekAt = now;
+    seekToClientX(event.clientX);
+  });
+  function endDrag(event: PointerEvent, commit: boolean): void {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const { wasPlaying } = drag;
+    drag = undefined;
+    if (progress.hasPointerCapture?.(event.pointerId))
+      progress.releasePointerCapture(event.pointerId);
+    if (commit) {
+      seekToClientX(event.clientX);
+      // The click that follows pointerup would seek and resume a second time.
+      swallowClick = true;
+      setTimeout(() => {
+        swallowClick = false;
+      }, 0);
+    }
+    if (wasPlaying) play();
+  }
+  progress.addEventListener('pointerup', (event) => endDrag(event, true));
+  progress.addEventListener('pointercancel', (event) => endDrag(event, false));
+  progress.addEventListener('click', (event) => {
+    if (swallowClick) return;
+    seekToClientX(event.clientX);
   });
 
   // Shortcuts apply only while focus is inside the demo, so they never capture
@@ -384,6 +516,21 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     pause,
     restart,
     seek,
+    get markers() {
+      return markers;
+    },
+    seekToMarker(label: string): boolean {
+      const marker = markers.find((m) => m.label === label);
+      if (!marker) return false;
+      seek(marker.time);
+      return true;
+    },
+    get speed() {
+      return speed;
+    },
+    set speed(value: number) {
+      setSpeed(value);
+    },
     get state() {
       return state;
     },
@@ -394,6 +541,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
       destroyed = true;
       cancelFrame();
       clearLoopTimer();
+      if (copyTimer !== undefined) clearTimeout(copyTimer);
       resizeObserver?.disconnect();
       motionQuery?.removeEventListener?.('change', onMotionChange);
       doc.removeEventListener('visibilitychange', onVisibilityChange);

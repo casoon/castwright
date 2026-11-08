@@ -22,6 +22,9 @@ server-rendered template, and in every JavaScript framework. Importing
 | `title-text` | string | Shown in the window chrome. Decorative. |
 | `chrome` | `window`, `none` | `none` drops the title bar. |
 | `controls` | `visible`, `hover`, `none` | See below. |
+| `speed` | number, 0.25–4 | Playback rate. Default 1. |
+| `speed-control` | boolean | Adds a speed button to the transport row. |
+| `copy` | boolean | Adds a copy button to the transport row. |
 
 Changing any of these attributes, or setting `cast`, on a mounted element rebuilds the
 player with the new values (the demo restarts). Before the first mount they are simply
@@ -54,7 +57,12 @@ The YAML parser is never shipped to a browser.
 
 ## Seeking, keyboard and events
 
-The progress bar is a seek slider: click it, or focus it and use the keyboard. While focus
+The progress bar is a seek slider: click it, drag it (mouse, touch or pen), or focus it and
+use the keyboard. A drag pauses playback, seeks continuously and restores the previous play
+state on release; horizontal drags on the bar do not scroll the page (`touch-action: pan-y`),
+vertical ones still do. Markers (`m` events in the cast) show as decorative ticks on the bar,
+and the slider's value text names the latest marker passed ("0:03 of 0:12, marker: build").
+While focus
 is inside the demo, Left/Right seek 5 seconds, Home/End jump to the start/end, `k` toggles
 play/pause, and Space toggles on the slider. See [Accessibility](../../guides/accessibility/).
 
@@ -71,7 +79,26 @@ The element dispatches bubbling `CustomEvent`s, so integrations need not poll `.
 `play`, `pause` and `ended` are also dispatched by `mount()` on its host. A hidden browser
 tab pauses playback and resumes it on return, so missed time is not dumped into one frame.
 
-Not yet available: playback speed, marker ticks on the seek bar, a copy button.
+## Playback speed
+
+`speed="1.5"` (or `speed: 1.5` in `mount()`, or `demo.player.speed = 1.5` at any time)
+plays faster or slower. Only elapsed wall-clock time is scaled, never the cast: `seek()`,
+the progress bar and the time display stay in cast time, and changing the speed mid-playback
+keeps the current position. `loop-delay` is real time and is not scaled. Values outside
+0.25–4 are clamped (the attribute ignores them with a warning).
+
+`speed-control` adds a button to the transport row showing the current rate. Each press
+steps through 0.5×, 1×, 1.5×, 2× and back; its accessible name is `Playback speed 1×,
+change`. It is a native button, so Tab/Enter/Space work, and it is hidden with
+`controls="none"`.
+
+## Copy button
+
+`copy` adds a button that writes the demo's final text — the same text as the accessibility
+fallback — to the clipboard with `navigator.clipboard.writeText`. A visible "Copied" (or
+"Copy failed") message appears next to it for two seconds in an `aria-live="polite"` region.
+Where the Clipboard API is unavailable (insecure context, old browser) the button is not
+rendered at all. Off by default, and hidden with `controls="none"`.
 
 ## Recordings from `asciinema rec`
 
@@ -106,6 +133,9 @@ const handle = mount(hostElement, cast, {
   loopDelayMs: 2000,
   chrome: 'window',
   controls: 'visible',
+  speed: 1,
+  speedControl: false,
+  copy: false,
   title: undefined,
   label: undefined,
   poster: undefined,
@@ -128,6 +158,8 @@ keeps them available to assistive technology. Call it on an element you own.
 | `pause()` | Stop the clock; the screen stays as it is. |
 | `restart()` | Reset the terminal and return to `idle`. Does not start playing. |
 | `seek(seconds)` | Replay up to that moment. Clamped to the duration. |
+| `markers` | Read-only list of `{ label, time }` (seconds) from the cast's `m` events; empty if there are none. |
+| `seekToMarker(label)` | Seek to the first marker with that label. Returns `false` if there is none. |
 | `state` | `'idle' \| 'playing' \| 'paused' \| 'finished'` |
 | `durationSeconds` | The last output event's time, including a closing `wait:`. |
 | `destroy()` | Cancel timers, disconnect observers, dispose the terminal. |

@@ -49,6 +49,9 @@ function numAttr(el: Element, name: string, bounds: NumBounds = {}): number | un
 /** Matches the parser's own ceiling on `terminal.cols` / `terminal.rows`. */
 const MAX_TERMINAL_COLS = 1000;
 const MAX_TERMINAL_ROWS = 1000;
+/** Mirrors the player's own clamp on `speed`. */
+const MIN_SPEED = 0.25;
+const MAX_SPEED = 4;
 /** A loop hold longer than this is a typo, not an intent. */
 const MAX_LOOP_DELAY_MS = 3_600_000;
 
@@ -74,6 +77,9 @@ const OBSERVED = [
   'title-text',
   'chrome',
   'controls',
+  'speed',
+  'speed-control',
+  'copy',
 ];
 
 export class CastwrightDemoElement extends ElementBase {
@@ -263,6 +269,8 @@ export class CastwrightDemoElement extends ElementBase {
     const options: PlayerOptions = {
       autoplay: boolAttr(this, 'autoplay'),
       loop: boolAttr(this, 'loop'),
+      speedControl: boolAttr(this, 'speed-control'),
+      copy: boolAttr(this, 'copy'),
     };
     const chrome = this.getAttribute('chrome');
     const controls = this.getAttribute('controls');
@@ -278,6 +286,9 @@ export class CastwrightDemoElement extends ElementBase {
     const poster = this.#poster(cast);
     const loopDelay = numAttr(this, 'loop-delay', { min: 0, max: MAX_LOOP_DELAY_MS });
 
+    const speed = numAttr(this, 'speed', { min: MIN_SPEED, max: MAX_SPEED });
+
+    if (speed !== undefined) options.speed = speed;
     if (title !== undefined) options.title = title;
     if (label !== undefined) options.label = label;
     if (cols !== undefined) options.cols = cols;

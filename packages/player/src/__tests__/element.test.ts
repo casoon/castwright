@@ -281,6 +281,26 @@ describe('<castwright-demo> — attributes become options', () => {
     expect('label' in options).toBe(false);
   });
 
+  it('translates speed, speed-control and copy, and ignores an out-of-range speed', async () => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    const el = element();
+    el.cast = cast;
+    el.setAttribute('speed', '1.5');
+    el.setAttribute('speed-control', '');
+    el.setAttribute('copy', '');
+    document.body.appendChild(el);
+    await vi.waitFor(() => expect(mount).toHaveBeenCalledOnce());
+    expect(vi.mocked(mount).mock.calls[0]?.[2]).toMatchObject({
+      speed: 1.5,
+      speedControl: true,
+      copy: true,
+    });
+
+    el.setAttribute('speed', '99');
+    await vi.waitFor(() => expect(mount).toHaveBeenCalledTimes(2));
+    expect('speed' in (vi.mocked(mount).mock.calls[1]?.[2] ?? {})).toBe(false);
+  });
+
   it('ignores a non-numeric poster rather than mounting a broken player', async () => {
     vi.stubGlobal('IntersectionObserver', undefined);
     const el = element();

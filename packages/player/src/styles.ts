@@ -132,6 +132,18 @@ export const PLAYER_CSS = `
   position: relative;
   height: 24px;
   cursor: pointer;
+  /* Horizontal drags scrub; vertical gestures still scroll the page. */
+  touch-action: pan-y;
+}
+.castwright-marker {
+  position: absolute;
+  inset-block-start: 7px;
+  width: 2px;
+  height: 10px;
+  margin-inline-start: -1px;
+  border-radius: 1px;
+  background: rgb(255 255 255 / 0.55);
+  pointer-events: none;
 }
 .castwright-progress::before,
 .castwright-progress-bar {
@@ -156,6 +168,10 @@ export const PLAYER_CSS = `
 }
 
 .castwright-time { flex: none; font-variant-numeric: tabular-nums; }
+
+.castwright-btn[data-action="speed"] { font-size: 12px; font-variant-numeric: tabular-nums; }
+.castwright-copy-status { flex: none; font-size: 12px; }
+.castwright-copy-status:empty { display: none; }
 
 /* The accessibility fallback: present for assistive technology and copy/paste,
    invisible once the live terminal is running. Not display:none — that would
