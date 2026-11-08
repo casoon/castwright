@@ -2,12 +2,9 @@
 // escapes"). `raw` passes text through untouched except for a small, fixed set
 // of backslash escapes: \e \n \r \t \xNN \uNNNN \\.
 //
-// Note on double-processing: if the YAML value is double-quoted, the `yaml`
-// library has already resolved standard YAML escapes (which happen to include
-// \e, \n, \r, \t, \xNN, \uNNNN) before this function ever sees the string, so
-// there is nothing left here to convert. If the value is single-quoted or a
-// plain/block scalar, YAML does not touch backslashes and this pass is what
-// resolves them. Applying this pass unconditionally is safe for both cases.
+// Note on double-processing: a double-quoted YAML scalar already has its
+// escapes resolved by the `yaml` library, so the parser applies this pass only
+// to plain, single-quoted and block scalars (see parseOutputText()).
 
 import { errorAtOffset } from './errors.js';
 
@@ -24,9 +21,12 @@ export interface UnescapeContext {
   file: string;
   /** Offset of the raw value's first character in `source`, used for error position. */
   baseOffset: number;
+  /** Maps an index in the scalar's value to a `source` offset; defaults to `baseOffset + index`. */
+  offsetAt?: (index: number) => number;
 }
 
 export function unescapeRaw(text: string, ctx: UnescapeContext): string {
+  const at = (index: number) => ctx.offsetAt?.(index) ?? ctx.baseOffset + index;
   let out = '';
   let i = 0;
 
@@ -40,12 +40,7 @@ export function unescapeRaw(text: string, ctx: UnescapeContext): string {
 
     const next = text[i + 1];
     if (next === undefined) {
-      throw errorAtOffset(
-        ctx.source,
-        ctx.file,
-        ctx.baseOffset,
-        "output.raw ends with a trailing '\\'",
-      );
+      throw errorAtOffset(ctx.source, ctx.file, at(i), "output.raw ends with a trailing '\\'");
     }
 
     if (next in SIMPLE) {
@@ -60,7 +55,7 @@ export function unescapeRaw(text: string, ctx: UnescapeContext): string {
         throw errorAtOffset(
           ctx.source,
           ctx.file,
-          ctx.baseOffset,
+          at(i),
           `output.raw has an invalid '\\x' escape: '\\x${hex}' is not two hex digits`,
         );
       }
@@ -75,7 +70,7 @@ export function unescapeRaw(text: string, ctx: UnescapeContext): string {
         throw errorAtOffset(
           ctx.source,
           ctx.file,
-          ctx.baseOffset,
+          at(i),
           `output.raw has an invalid '\\u' escape: '\\u${hex}' is not four hex digits`,
         );
       }
@@ -87,7 +82,7 @@ export function unescapeRaw(text: string, ctx: UnescapeContext): string {
     throw errorAtOffset(
       ctx.source,
       ctx.file,
-      ctx.baseOffset,
+      at(i),
       `output.raw has an unknown escape '\\${next}' — supported: \\e \\n \\r \\t \\xNN \\uNNNN \\\\`,
     );
   }

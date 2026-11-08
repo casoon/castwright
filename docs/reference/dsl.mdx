@@ -83,7 +83,7 @@ Exactly one primary key per step.
 | `speed` | `run`, `type` | Milliseconds per character. `0` is instant. |
 | `jitter` | `run`, `type` | 0–1, varies the per-character delay. Requires a top-level `seed`. |
 | `delay` | `output`, `show` | Milliseconds between output *lines*. Default 0 — the whole block at once. |
-| `pause` | any | Milliseconds after this step. |
+| `pause` | any except `wait` | Milliseconds after this step. `wait` already is a pause, so the key is rejected there. |
 | `prompt` | `run`, `type` | `false` suppresses the prompt for that step. |
 
 <Cast name="output-delay" title="delay: output one line at a time" />
@@ -224,7 +224,8 @@ For pasting genuine program output that already contains escape sequences:
 ```
 
 Supports `\e`, `\n`, `\r`, `\t`, `\xNN`, `\uNNNN` and `\\`. Markup is *not* processed in
-`raw`.
+`raw`. In a double-quoted scalar YAML itself decodes the escapes, so write a literal
+backslash as `\\`; in a single-quoted or block scalar Castwright decodes them.
 
 ## Validation
 
@@ -235,7 +236,7 @@ Enforced by `castwright validate` and by every code path that parses a file:
 - `jitter > 0` without a top-level `seed` is an error.
 - Unbalanced or unknown markup tags are errors, with the offending column.
 - An unknown `terminal.theme` is an error, listing the known names.
-- An `output` line wider than `cols` is a warning, not an error.
+- An `output` line wider than `cols` terminal columns (escape sequences ignored, wide characters count twice) is a warning, not an error.
 
 Every error carries the file, the line, the column and the offending source line:
 
