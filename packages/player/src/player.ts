@@ -15,8 +15,10 @@ import { createXtermTerminal } from './xterm-adapter.js';
 
 const DEFAULT_LOOP_DELAY_MS = 2000;
 
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
 function prefersReducedMotion(win: Window): boolean {
-  return win.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  return win.matchMedia?.(REDUCED_MOTION_QUERY).matches ?? false;
 }
 
 export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}): PlayerHandle {
@@ -226,6 +228,8 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
   }
 
   function showFinalFrame(): void {
+    cancelFrame();
+    clearLoopTimer();
     resetTerminal();
     cursor = replay(timeline, { index: 0, resizeIndex: 0 }, durationMs, sink);
     elapsedMs = durationMs;
@@ -241,6 +245,16 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     restart();
     play();
   });
+
+  // Reduced motion switched on while the demo is running: stop animating and
+  // show the end state, as if it had been on at load. An explicit
+  // `reducedMotion` option pins the mode, so the query is not consulted.
+  const motionQuery =
+    options.reducedMotion === undefined ? win.matchMedia?.(REDUCED_MOTION_QUERY) : undefined;
+  const onMotionChange = (event: MediaQueryListEvent) => {
+    if (event.matches && !destroyed) showFinalFrame();
+  };
+  motionQuery?.addEventListener?.('change', onMotionChange);
 
   if (reduced) {
     // No animation: the end state immediately. Controls stay usable for anyone
@@ -271,6 +285,7 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
       cancelFrame();
       clearLoopTimer();
       resizeObserver?.disconnect();
+      motionQuery?.removeEventListener?.('change', onMotionChange);
       terminal.dispose();
     },
   };

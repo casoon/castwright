@@ -480,3 +480,70 @@ describe('mount — terminal size after r events', () => {
     expect(terminal.resizes.at(-1)).toEqual([100, 30]);
   });
 });
+
+describe('mount — prefers-reduced-motion changing at runtime', () => {
+  function stubMotionQuery() {
+    const listeners = new Set<(event: MediaQueryListEvent) => void>();
+    const query = {
+      matches: false,
+      addEventListener: (_: string, fn: (event: MediaQueryListEvent) => void) => listeners.add(fn),
+      removeEventListener: (_: string, fn: (event: MediaQueryListEvent) => void) =>
+        listeners.delete(fn),
+    };
+    vi.stubGlobal('matchMedia', () => query);
+    window.matchMedia = (() => query) as unknown as typeof window.matchMedia;
+    return {
+      listeners,
+      change(matches: boolean) {
+        query.matches = matches;
+        for (const fn of [...listeners]) fn({ matches } as MediaQueryListEvent);
+      },
+    };
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete (window as { matchMedia?: unknown }).matchMedia;
+  });
+
+  it('stops a looping demo and shows the final frame', async () => {
+    const motion = stubMotionQuery();
+    const handle = mountWith({
+      autoplay: true,
+      loop: true,
+      loopDelayMs: 100,
+      reducedMotion: undefined,
+    });
+    await vi.advanceTimersByTimeAsync(300);
+    expect(handle.state).toBe('playing');
+
+    motion.change(true);
+    expect(handle.state).toBe('finished');
+    expect(terminal.screen()).toBe('$ ls\r\ndone\r\n');
+
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(handle.state).toBe('finished');
+  });
+
+  it('cancels a pending loop restart', async () => {
+    const motion = stubMotionQuery();
+    const handle = mountWith({
+      autoplay: true,
+      loop: true,
+      loopDelayMs: 500,
+      reducedMotion: undefined,
+    });
+    await vi.advanceTimersByTimeAsync(1100);
+    motion.change(true);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(handle.state).toBe('finished');
+  });
+
+  it('removes its listener on destroy', () => {
+    const motion = stubMotionQuery();
+    const handle = mountWith({ reducedMotion: undefined });
+    expect(motion.listeners.size).toBe(1);
+    handle.destroy();
+    expect(motion.listeners.size).toBe(0);
+  });
+});
