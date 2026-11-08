@@ -27,7 +27,9 @@ DOM, visually hidden, and marks the live terminal `aria-hidden` so the same cont
 announced twice.
 
 The Astro component generates this for you from the compiled cast, so the fallback is
-always the demo's actual final frame rather than something that drifted out of date.
+always the demo's actual final frame rather than something that drifted out of date. With
+`src=` instead of an import there is no cast to take it from: pass the text as the
+component's slot content (the build warns when it is missing).
 
 > **Caution:** This is the one thing the player cannot do for you. If you hand-write the element, write
 > the fallback too — a `<castwright-demo>` with no children is an empty box to anyone who

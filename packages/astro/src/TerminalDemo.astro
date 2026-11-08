@@ -18,6 +18,11 @@
 // which `import.meta.glob` inside this component cannot do. An import is also
 // type-checked and fails the build when the file moves — see
 // docs/reference/player.md.
+//
+// With `src` there is no compiled cast to take the fallback text from, so pass
+// it as the slot: <TerminalDemo src="/demo.cast">$ npm install</TerminalDemo>.
+
+import { jsonForScript, reservedHeightPx } from '@casoon/astro-castwright/inline-json';
 
 export interface Props {
   /** A `*.terminal.yaml` import, compiled by the castwright Vite plugin. */
@@ -69,12 +74,25 @@ if (!demo && !src) {
 }
 
 const cast = demo?.cast as { header?: { width?: number; height?: number } } | undefined;
-const fallbackText = demo?.finalFrame ?? '';
+// Slot content is the fallback for `src`, and overrides the final frame.
+const hasSlot = Astro.slots.has('default');
+if (!demo && !hasSlot) {
+  console.warn(
+    '[castwright] <TerminalDemo src="..."> has no fallback: pass the demo\'s final screen as ' +
+      'slot content, or assistive technology gets an empty box until the player loads.',
+  );
+}
 
 // Reserve the terminal's height so upgrading from the fallback to the live
-// terminal does not shift the page. 17px is xterm's default line height at its
-// default font size; the chrome and transport add a little more.
-const reservedHeight = cast?.header?.height ? `${cast.header.height * 17 + 24}px` : undefined;
+// terminal does not shift the page: rows, title bar, transport and screen
+// padding, see reservedHeightPx().
+const reservedPx = reservedHeightPx({
+  castRows: cast?.header?.height,
+  rows,
+  chrome,
+  controls,
+});
+const reservedHeight = reservedPx === undefined ? undefined : `${reservedPx}px`;
 ---
 
 <castwright-demo
@@ -97,10 +115,10 @@ const reservedHeight = cast?.header?.height ? `${cast.header.height * 17 + 24}px
       type="application/json"
       data-castwright-cast
       is:inline
-      set:html={JSON.stringify(demo.cast)}
+      set:html={jsonForScript(demo.cast)}
     />
   )}
-  <pre>{fallbackText}</pre>
+  {hasSlot ? <slot /> : demo && <pre>{demo.finalFrame}</pre>}
 </castwright-demo>
 
 <script>
