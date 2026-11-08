@@ -73,12 +73,22 @@ export interface PlayerOptions {
 
 export type PlayerState = 'idle' | 'playing' | 'paused' | 'finished';
 
+/** A marker (`m` event) in the cast; `time` is in seconds. */
+export interface PlayerMarker {
+  readonly label: string;
+  readonly time: number;
+}
+
 export interface PlayerHandle {
   play(): void;
   pause(): void;
   restart(): void;
   /** Seek is replay: the screen is reset and every byte up to `seconds` is re-fed. */
   seek(seconds: number): void;
+  /** Every marker in the cast, in order. Empty when there are none. */
+  readonly markers: readonly PlayerMarker[];
+  /** Seek to the first marker with this label. Returns false if there is none. */
+  seekToMarker(label: string): boolean;
   readonly state: PlayerState;
   readonly durationSeconds: number;
   destroy(): void;

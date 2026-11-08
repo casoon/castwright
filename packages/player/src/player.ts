@@ -10,7 +10,14 @@ import { fitToWidth } from './fit.js';
 import { injectStyles } from './styles.js';
 import { toXtermTheme } from './theme.js';
 import { buildTimeline, type ReplayCursor, replay, type Timeline } from './timeline.js';
-import type { Cast, PlayerHandle, PlayerOptions, PlayerState, TerminalAdapter } from './types.js';
+import type {
+  Cast,
+  PlayerHandle,
+  PlayerMarker,
+  PlayerOptions,
+  PlayerState,
+  TerminalAdapter,
+} from './types.js';
 import { createXtermTerminal } from './xterm-adapter.js';
 
 const DEFAULT_LOOP_DELAY_MS = 2000;
@@ -149,6 +156,31 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
 
   chrome.progress.setAttribute('aria-valuemax', String(Math.floor(durationMs / 1000)));
 
+  const markers: readonly PlayerMarker[] = Object.freeze(
+    timeline.markers.map((m) => Object.freeze({ label: m.data, time: m.timeMs / 1000 })),
+  );
+  // Decorative ticks: the slider's value text names the marker for assistive
+  // technology, so the ticks themselves stay out of the accessibility tree.
+  if (controls !== 'none' && durationMs > 0) {
+    for (const marker of markers) {
+      const tick = doc.createElement('i');
+      tick.className = 'castwright-marker';
+      tick.setAttribute('aria-hidden', 'true');
+      tick.style.setProperty(
+        'inset-inline-start',
+        `${(Math.min(1, (marker.time * 1000) / durationMs) * 100).toFixed(2)}%`,
+      );
+      chrome.progress.appendChild(tick);
+    }
+  }
+
+  /** The latest marker at or before `seconds`, for the slider's value text. */
+  function markerAt(seconds: number): PlayerMarker | undefined {
+    let found: PlayerMarker | undefined;
+    for (const marker of markers) if (marker.time <= seconds) found = marker;
+    return found;
+  }
+
   /** DOM events on the host, so integrations need not poll `.player`. */
   function emit(name: string): void {
     host.dispatchEvent(
@@ -170,9 +202,11 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     if (second !== announcedSecond) {
       announcedSecond = second;
       chrome.progress.setAttribute('aria-valuenow', String(second));
+      const marker = markerAt(elapsedMs / 1000);
       chrome.progress.setAttribute(
         'aria-valuetext',
-        `${formatClock(elapsedMs / 1000)} of ${formatClock(durationMs / 1000)}`,
+        `${formatClock(elapsedMs / 1000)} of ${formatClock(durationMs / 1000)}` +
+          (marker ? `, marker: ${marker.label}` : ''),
       );
     }
     const playing = state === 'playing';
@@ -384,6 +418,15 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
     pause,
     restart,
     seek,
+    get markers() {
+      return markers;
+    },
+    seekToMarker(label: string): boolean {
+      const marker = markers.find((m) => m.label === label);
+      if (!marker) return false;
+      seek(marker.time);
+      return true;
+    },
     get state() {
       return state;
     },

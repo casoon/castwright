@@ -133,6 +133,16 @@ export const PLAYER_CSS = `
   height: 24px;
   cursor: pointer;
 }
+.castwright-marker {
+  position: absolute;
+  inset-block-start: 7px;
+  width: 2px;
+  height: 10px;
+  margin-inline-start: -1px;
+  border-radius: 1px;
+  background: rgb(255 255 255 / 0.55);
+  pointer-events: none;
+}
 .castwright-progress::before,
 .castwright-progress-bar {
   position: absolute;

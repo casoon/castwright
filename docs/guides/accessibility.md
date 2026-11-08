@@ -73,7 +73,8 @@ the console rather than letting it pass quietly.
 ## Seek bar and shortcuts
 
 The progress bar is a `role="slider"` named "Seek", focusable with Tab, with
-`aria-valuetext` such as "0:03 of 0:12". Its value attributes change once per second, not
+`aria-valuetext` such as "0:03 of 0:12" (with ", marker: <label>" appended once a marker
+has been passed; the marker ticks themselves are `aria-hidden`). Its value attributes change once per second, not
 per frame, so assistive technology is not flooded. The hit area is 24 px tall
 (SC 2.5.8). While focus is inside the demo: Left/Right seek 5 s, Home/End jump to start/end,
 `k` toggles play/pause, and Space does the same on the slider (buttons keep their native

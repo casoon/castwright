@@ -680,3 +680,61 @@ describe('mount — seek bar, keyboard and events', () => {
     expect(seen).toEqual(['play', 'pause', 'play', 'ended']);
   });
 });
+
+describe('mount — markers', () => {
+  const marked: Cast = {
+    header: { version: 2, width: 80, height: 24 },
+    events: [
+      [0, 'o', 'a'],
+      [1, 'm', 'build'],
+      [1, 'o', 'b'],
+      [3, 'm', 'deploy'],
+      [4, 'o', 'c'],
+    ],
+  };
+
+  function mountMarked(c: Cast) {
+    return mount(host, c, {
+      reducedMotion: false,
+      createTerminal: (init) => {
+        terminal = createFakeTerminal(init);
+        return terminal;
+      },
+    });
+  }
+
+  it('exposes markers and draws one decorative tick per marker', () => {
+    const handle = mountMarked(marked);
+    expect(handle.markers).toEqual([
+      { label: 'build', time: 1 },
+      { label: 'deploy', time: 3 },
+    ]);
+    const ticks = host.querySelectorAll('.castwright-marker');
+    expect(ticks).toHaveLength(2);
+    expect((ticks[0] as HTMLElement).getAttribute('aria-hidden')).toBe('true');
+    expect((ticks[1] as HTMLElement).style.getPropertyValue('inset-inline-start')).toBe('75.00%');
+  });
+
+  it('seeks to a marker by label, and reports an unknown label', () => {
+    const handle = mountMarked(marked);
+    expect(handle.seekToMarker('deploy')).toBe(true);
+    expect(terminal.screen()).toBe('ab');
+    expect(handle.seekToMarker('nope')).toBe(false);
+    expect(terminal.screen()).toBe('ab');
+  });
+
+  it('names the latest marker in the slider value text', () => {
+    const handle = mountMarked(marked);
+    const slider = host.querySelector('[role="slider"]') as HTMLElement;
+    expect(slider.getAttribute('aria-valuetext')).not.toMatch(/marker/);
+    handle.seekToMarker('build');
+    expect(slider.getAttribute('aria-valuetext')).toBe('0:01 of 0:04, marker: build');
+  });
+
+  it('handles a cast without markers', () => {
+    const handle = mountMarked(cast);
+    expect(handle.markers).toEqual([]);
+    expect(host.querySelectorAll('.castwright-marker')).toHaveLength(0);
+    expect(handle.seekToMarker('x')).toBe(false);
+  });
+});
