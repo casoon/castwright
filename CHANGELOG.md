@@ -22,6 +22,10 @@ All notable changes to this project are documented here, following
 - **Player:** `castwright:ready`, `castwright:play`, `castwright:pause`, `castwright:ended` and `castwright:error` events, and `poster="marker:<label>"`.
 - **Astro:** `<TerminalDemo src="…">` takes the accessibility fallback as slot content and warns at build time when none is given.
 - **npm:** `node-pty` is declared as an optional peer dependency of `@casoon/castwright`.
+- **Player:** marker ticks on the seek bar, plus `handle.markers` and `handle.seekToMarker(label)`; the slider's value text names the latest marker passed.
+- **Player:** drag scrubbing on the seek bar for mouse, touch and pen; it pauses while dragging and restores the previous play state on release.
+- **Player:** `speed` attribute and option (0.25–4×) and `handle.speed`; optional `speed-control` adds a labelled speed button to the transport row.
+- **Player:** optional `copy` attribute adds a button that copies the terminal's final text, with an `aria-live` confirmation.
 
 ### Changed
 
