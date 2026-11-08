@@ -18,6 +18,7 @@ describe('PLAYER_CSS', () => {
       '.castwright-chrome',
       '.castwright-screen',
       '.castwright-scaler',
+      '.castwright-marker',
       '.castwright-transport',
       '.castwright-btn',
       '.castwright-progress',

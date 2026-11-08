@@ -54,7 +54,12 @@ The YAML parser is never shipped to a browser.
 
 ## Seeking, keyboard and events
 
-The progress bar is a seek slider: click it, or focus it and use the keyboard. While focus
+The progress bar is a seek slider: click it, drag it (mouse, touch or pen), or focus it and
+use the keyboard. A drag pauses playback, seeks continuously and restores the previous play
+state on release; horizontal drags on the bar do not scroll the page (`touch-action: pan-y`),
+vertical ones still do. Markers (`m` events in the cast) show as decorative ticks on the bar,
+and the slider's value text names the latest marker passed ("0:03 of 0:12, marker: build").
+While focus
 is inside the demo, Left/Right seek 5 seconds, Home/End jump to the start/end, `k` toggles
 play/pause, and Space toggles on the slider. See [Accessibility](../../guides/accessibility/).
 
@@ -71,7 +76,7 @@ The element dispatches bubbling `CustomEvent`s, so integrations need not poll `.
 `play`, `pause` and `ended` are also dispatched by `mount()` on its host. A hidden browser
 tab pauses playback and resumes it on return, so missed time is not dumped into one frame.
 
-Not yet available: playback speed, marker ticks on the seek bar, a copy button.
+Not yet available: playback speed, a copy button.
 
 ## Recordings from `asciinema rec`
 
@@ -128,6 +133,8 @@ keeps them available to assistive technology. Call it on an element you own.
 | `pause()` | Stop the clock; the screen stays as it is. |
 | `restart()` | Reset the terminal and return to `idle`. Does not start playing. |
 | `seek(seconds)` | Replay up to that moment. Clamped to the duration. |
+| `markers` | Read-only list of `{ label, time }` (seconds) from the cast's `m` events; empty if there are none. |
+| `seekToMarker(label)` | Seek to the first marker with that label. Returns `false` if there is none. |
 | `state` | `'idle' \| 'playing' \| 'paused' \| 'finished'` |
 | `durationSeconds` | The last output event's time, including a closing `wait:`. |
 | `destroy()` | Cancel timers, disconnect observers, dispose the terminal. |

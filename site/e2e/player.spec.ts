@@ -76,6 +76,25 @@ test.describe('<castwright-demo> on the demo page', () => {
     await expect(demo.locator('.xterm-rows')).toContainText(FIRST_DEMO_TEXT, { timeout: 10_000 });
   });
 
+  test('dragging the seek bar scrubs, and keeps a paused demo paused', async ({ page }) => {
+    const demo = await firstLiveDemo(page);
+    await demo.evaluate((el: HTMLElement & { player?: { pause(): void } }) => el.player?.pause());
+    const slider = demo.locator('[role="slider"]');
+    await expect(slider).toHaveCSS('touch-action', 'pan-y');
+    const box = await slider.boundingBox();
+    if (!box) throw new Error('seek bar has no box');
+    const y = box.y + box.height / 2;
+    await page.mouse.move(box.x + 2, y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2, y, { steps: 5 });
+    await page.mouse.move(box.x + box.width + 40, y, { steps: 5 }); // past the end: capture holds
+    await page.mouse.up();
+    await expect(demo.locator('.xterm-rows')).toContainText(FIRST_DEMO_TEXT, { timeout: 10_000 });
+    expect(
+      await demo.evaluate((el: HTMLElement & { player?: { state: string } }) => el.player?.state),
+    ).not.toBe('playing');
+  });
+
   test('the terminal is not a keyboard trap', async ({ page }) => {
     const demo = await firstLiveDemo(page);
     const textarea = demo.locator('.xterm textarea');
