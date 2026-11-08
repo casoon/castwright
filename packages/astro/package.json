@@ -30,6 +30,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./inline-json": {
+      "types": "./dist/inline-json.d.ts",
+      "import": "./dist/inline-json.js"
+    },
     "./TerminalDemo.astro": "./src/TerminalDemo.astro",
     "./package.json": "./package.json"
   },
