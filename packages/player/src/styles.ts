@@ -132,6 +132,8 @@ export const PLAYER_CSS = `
   position: relative;
   height: 24px;
   cursor: pointer;
+  /* Horizontal drags scrub; vertical gestures still scroll the page. */
+  touch-action: pan-y;
 }
 .castwright-marker {
   position: absolute;

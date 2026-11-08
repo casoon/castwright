@@ -78,7 +78,8 @@ has been passed; the marker ticks themselves are `aria-hidden`). Its value attri
 per frame, so assistive technology is not flooded. The hit area is 24 px tall
 (SC 2.5.8). While focus is inside the demo: Left/Right seek 5 s, Home/End jump to start/end,
 `k` toggles play/pause, and Space does the same on the slider (buttons keep their native
-Space). The shortcuts exist only while focus is inside the demo — never page-wide, in
+Space). Pointer dragging is an addition, never the only way: every seek is also available
+from the keyboard. The shortcuts exist only while focus is inside the demo — never page-wide, in
 line with SC 2.1.4 — and Tab always leaves.
 
 ## The terminal is not a keyboard trap

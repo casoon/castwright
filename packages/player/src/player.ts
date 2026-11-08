@@ -328,11 +328,62 @@ export function mount(host: HTMLElement, cast: Cast, options: PlayerOptions = {}
   });
 
   const SEEK_STEP_SECONDS = 5;
-  chrome.progress.addEventListener('click', (event) => {
+  const DRAG_SEEK_INTERVAL_MS = 40;
+
+  function seekToClientX(clientX: number): void {
     const rect = chrome.progress.getBoundingClientRect();
     if (rect.width === 0) return;
-    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
     seek(ratio * (durationMs / 1000));
+  }
+
+  // Drag scrubbing: pointer events cover mouse, touch and pen. The pointer is
+  // captured so the drag survives leaving the 4px track, playback pauses while
+  // dragging (each seek is a full replay) and the previous play state returns
+  // on release. Keyboard seeking above is untouched.
+  let drag: { pointerId: number; wasPlaying: boolean; lastSeekAt: number } | undefined;
+  let swallowClick = false;
+  const progress = chrome.progress;
+
+  progress.addEventListener('pointerdown', (event) => {
+    if (destroyed || drag || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    drag = {
+      pointerId: event.pointerId,
+      wasPlaying: state === 'playing',
+      lastSeekAt: performance.now(),
+    };
+    progress.setPointerCapture?.(event.pointerId);
+    pause();
+    seekToClientX(event.clientX);
+  });
+  progress.addEventListener('pointermove', (event) => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const now = performance.now();
+    if (now - drag.lastSeekAt < DRAG_SEEK_INTERVAL_MS) return;
+    drag.lastSeekAt = now;
+    seekToClientX(event.clientX);
+  });
+  function endDrag(event: PointerEvent, commit: boolean): void {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const { wasPlaying } = drag;
+    drag = undefined;
+    if (progress.hasPointerCapture?.(event.pointerId))
+      progress.releasePointerCapture(event.pointerId);
+    if (commit) {
+      seekToClientX(event.clientX);
+      // The click that follows pointerup would seek and resume a second time.
+      swallowClick = true;
+      setTimeout(() => {
+        swallowClick = false;
+      }, 0);
+    }
+    if (wasPlaying) play();
+  }
+  progress.addEventListener('pointerup', (event) => endDrag(event, true));
+  progress.addEventListener('pointercancel', (event) => endDrag(event, false));
+  progress.addEventListener('click', (event) => {
+    if (swallowClick) return;
+    seekToClientX(event.clientX);
   });
 
   // Shortcuts apply only while focus is inside the demo, so they never capture

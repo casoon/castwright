@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '../player.js';
+import { PLAYER_CSS } from '../styles.js';
 import type { Cast } from '../types.js';
 import { createFakeTerminal, type FakeTerminal } from './fake-terminal.js';
 
@@ -736,5 +737,71 @@ describe('mount — markers', () => {
     expect(handle.markers).toEqual([]);
     expect(host.querySelectorAll('.castwright-marker')).toHaveLength(0);
     expect(handle.seekToMarker('x')).toBe(false);
+  });
+});
+
+describe('mount — drag scrubbing', () => {
+  function slider(): HTMLElement {
+    const el = host.querySelector('[role="slider"]') as HTMLElement;
+    el.getBoundingClientRect = () => ({ left: 0, width: 100 }) as DOMRect;
+    return el;
+  }
+  function pointer(type: string, clientX: number, init: Record<string, unknown> = {}) {
+    const event = new MouseEvent(type, { clientX, bubbles: true, button: 0, ...init });
+    Object.assign(event, { pointerId: 1, pointerType: 'touch' });
+    return event;
+  }
+
+  it('pauses while dragging, seeks continuously and resumes on release', async () => {
+    const handle = mountWith({ autoplay: true });
+    const el = slider();
+    el.dispatchEvent(pointer('pointerdown', 10));
+    expect(handle.state).toBe('paused');
+    await vi.advanceTimersByTimeAsync(100);
+    el.dispatchEvent(pointer('pointermove', 50));
+    expect(terminal.screen()).toBe('$ ls\r\n');
+    expect(handle.state).toBe('paused');
+    el.dispatchEvent(pointer('pointerup', 100));
+    expect(terminal.screen()).toBe('$ ls\r\ndone\r\n');
+    expect(handle.state).toBe('playing');
+  });
+
+  it('keeps a paused player paused after a drag', () => {
+    const handle = mountWith();
+    const el = slider();
+    el.dispatchEvent(pointer('pointerdown', 0));
+    el.dispatchEvent(pointer('pointerup', 50));
+    expect(handle.state).toBe('idle');
+    expect(terminal.screen()).toBe('$ ls\r\n');
+  });
+
+  it('throttles move events', async () => {
+    mountWith();
+    const el = slider();
+    el.dispatchEvent(pointer('pointerdown', 0));
+    const resets = terminal.resets;
+    el.dispatchEvent(pointer('pointermove', 20));
+    el.dispatchEvent(pointer('pointermove', 30));
+    expect(terminal.resets).toBe(resets);
+    await vi.advanceTimersByTimeAsync(50);
+    el.dispatchEvent(pointer('pointermove', 100));
+    expect(terminal.resets).toBe(resets + 1);
+  });
+
+  it('ignores a secondary mouse button and a cancelled drag does not seek', () => {
+    const handle = mountWith();
+    const el = slider();
+    const right = pointer('pointerdown', 50, { button: 2 });
+    Object.assign(right, { pointerType: 'mouse' });
+    el.dispatchEvent(right);
+    expect(terminal.screen()).toBe('');
+    el.dispatchEvent(pointer('pointerdown', 0));
+    el.dispatchEvent(pointer('pointercancel', 100));
+    expect(terminal.screen()).toBe('$ ');
+    expect(handle.state).toBe('idle');
+  });
+
+  it('declares touch-action so horizontal drags do not scroll the page', () => {
+    expect(PLAYER_CSS).toMatch(/\.castwright-progress\s*{[^}]*touch-action:\s*pan-y/);
   });
 });
