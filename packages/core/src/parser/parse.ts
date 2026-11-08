@@ -17,7 +17,9 @@ import type {
 } from '../types.js';
 import { errorAtOffset, lineAt, positionAt } from './errors.js';
 import { parseMarkup } from './markup.js';
+import { scalarOffsetMap } from './scalar-offsets.js';
 import { unescapeRaw } from './unescape.js';
+import { columnWidth } from './width.js';
 
 // Baked-in defaults, taken verbatim from the worked example in
 // docs/reference/dsl.mdx so the documented example and the implementation
@@ -230,6 +232,7 @@ function parseStyledScalar(scalar: Scalar, ctx: Ctx): Styled {
     source: ctx.source,
     file: ctx.file,
     baseOffset: nodeOffset(scalar),
+    offsetAt: scalarOffsetMap(scalar, ctx.source, scalar.value),
   });
 }
 
@@ -389,11 +392,17 @@ function parseOutputText(pair: Pair, ctx: Ctx): Styled {
     if (typeof rawScalar.value !== 'string') {
       ctx.errAtNode(rawScalar, 'output.raw must be a string');
     }
-    const text = unescapeRaw(rawScalar.value, {
-      source: ctx.source,
-      file: ctx.file,
-      baseOffset: nodeOffset(rawScalar),
-    });
+    // A double-quoted scalar was already decoded by YAML; decoding again would
+    // turn a literal backslash into an escape.
+    const text =
+      rawScalar.type === 'QUOTE_DOUBLE'
+        ? rawScalar.value
+        : unescapeRaw(rawScalar.value, {
+            source: ctx.source,
+            file: ctx.file,
+            baseOffset: nodeOffset(rawScalar),
+            offsetAt: scalarOffsetMap(rawScalar, ctx.source, rawScalar.value),
+          });
     return [{ text }];
   }
 
@@ -403,10 +412,11 @@ function parseOutputText(pair: Pair, ctx: Ctx): Styled {
 function checkOutputLineLength(text: Styled, cols: number, pair: Pair, ctx: Ctx): void {
   const joined = text.map((span) => span.text).join('');
   for (const line of joined.split('\n')) {
-    if (line.length > cols) {
+    const width = columnWidth(line);
+    if (width > cols) {
       ctx.warnAt(
         nodeOffset(pair),
-        `output line is ${line.length} characters, wider than terminal.cols (${cols})`,
+        `output line is ${width} columns wide, wider than terminal.cols (${cols})`,
       );
       return;
     }
@@ -687,7 +697,11 @@ function parseExecStep(
 }
 
 function parseWaitStep(pair: Pair, map: YAMLMap, ctx: Ctx): Step {
-  rejectUnknownKeys(map, ['wait', 'pause'], ctx, "step 'wait'");
+  const pausePair = findPair(map, 'pause', ctx);
+  if (pausePair) {
+    ctx.errAtNode(pausePair, "'pause' has no effect on a 'wait' step — add it to the wait time");
+  }
+  rejectUnknownKeys(map, ['wait'], ctx, "step 'wait'");
   const ms = expectNumber(pair.value as Node, ctx, "step 'wait'", pair, DURATION);
   return { kind: 'wait', ms };
 }
