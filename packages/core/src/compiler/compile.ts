@@ -86,10 +86,15 @@ function compileOutput(step: Extract<Step, { kind: 'output' }>, ctx: Ctx): void 
     ctx.pushOutput(renderStyled(step.text));
     return;
   }
-  for (const line of splitStyledLines(step.text)) {
-    ctx.pushOutput(`${renderStyled(line)}\n`);
+  const lines = splitStyledLines(step.text);
+  // `\n` goes between lines, and after the last one only if the source had it —
+  // the same bytes as `lineDelay: 0`, just spread over time.
+  const endsWithNewline = step.text.at(-1)?.text.endsWith('\n') ?? false;
+  lines.forEach((line, i) => {
+    const newline = i < lines.length - 1 || endsWithNewline ? '\n' : '';
+    ctx.pushOutput(`${renderStyled(line)}${newline}`);
     ctx.advance(step.lineDelay);
-  }
+  });
 }
 
 function compileClear(ctx: Ctx): void {
@@ -138,6 +143,14 @@ export function compile(script: Script): Cast {
   const theme = resolveTheme(script.terminal.theme);
   const rng: Rng = script.seed !== undefined ? mulberry32(script.seed) : () => 0.5;
   const ctx = new Ctx(script.terminal.prompt, rng);
+
+  // DECSCUSR at t=0 so any asciicast player picks the cursor shape up. The
+  // default (blinking block) is the terminal's own, so nothing is written.
+  const { style, blink } = script.terminal.cursor;
+  if (style !== 'block' || !blink) {
+    const base = { block: 1, underline: 3, bar: 5 }[style];
+    ctx.pushOutput(`\x1b[${base + (blink ? 0 : 1)} q`);
+  }
 
   for (const step of script.steps) {
     compileStep(step, ctx);

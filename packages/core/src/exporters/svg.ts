@@ -234,6 +234,12 @@ function mix(a: string, b: string, t: number): string {
   return rgbHex(r ?? 0, g ?? 0, bl ?? 0);
 }
 
+const XML_ILLEGAL_RANGES = String.raw`\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF`;
+const XML_ILLEGAL = new RegExp(
+  `[${XML_ILLEGAL_RANGES}]|[\\uD800-\\uDBFF](?![\\uDC00-\\uDFFF])|(?<![\\uD800-\\uDBFF])[\\uDC00-\\uDFFF]`,
+  'g',
+);
+
 /**
  * XML-escapes `text` for either a text node or a double-quoted attribute value.
  *
@@ -244,11 +250,30 @@ function mix(a: string, b: string, t: number): string {
  * plain quote there.
  */
 function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return (
+    text
+      // Characters XML 1.0 forbids (controls, U+FFFE/F, lone surrogates) make the
+      // whole document malformed; drop them.
+      .replace(XML_ILLEGAL, '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+  );
+}
+
+/** The cursor shape the cast selected last with DECSCUSR (`ESC [ n SP q`). */
+function cursorShapeOf(cast: Cast): 'block' | 'bar' | 'underline' {
+  let shape: 'block' | 'bar' | 'underline' = 'block';
+  for (const [, type, data] of cast.events) {
+    if (type !== 'o') continue;
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: ESC introduces the sequence
+    for (const match of data.matchAll(/\x1b\[(\d*) q/g)) {
+      const n = Number(match[1] || 0);
+      shape = n === 3 || n === 4 ? 'underline' : n === 5 || n === 6 ? 'bar' : 'block';
+    }
+  }
+  return shape;
 }
 
 /** Compact number formatting: at most two decimals, no trailing zeros. */
@@ -362,6 +387,13 @@ export async function renderSvg(cast: Cast, options: SvgOptions = {}): Promise<s
   const minFrameInterval = options.minFrameInterval ?? 30;
   const startOnFinal = (options.start ?? 'final') === 'final';
   const theme = cast.header.theme ?? resolveTheme('default');
+  // Colours are written into <style> and attributes unescaped, so anything but
+  // #rrggbb (e.g. from a header read out of a .cast file) is refused.
+  for (const colour of [theme.foreground, theme.background, theme.cursor, ...theme.palette]) {
+    if (!/^#[0-9a-fA-F]{6}$/.test(colour)) {
+      throw new Error(`invalid theme colour ${JSON.stringify(colour)}: expected #rrggbb`);
+    }
+  }
 
   const renderer = new RowRenderer(theme);
   const { frames, cols, rows } = await collectFrames(cast, renderer, minFrameInterval);
@@ -490,12 +522,19 @@ export async function renderSvg(cast: Cast, options: SvgOptions = {}): Promise<s
   } else {
     cursor.push({ time: 0, value: cursorAt(last) });
   }
-  const cursorRect = `width="${CELL_W}" height="${LINE_H}"`;
+  const cursorShape = cursorShapeOf(cast);
+  const cursorRect =
+    cursorShape === 'bar'
+      ? `width="2" height="${LINE_H}"`
+      : cursorShape === 'underline'
+        ? `y="${LINE_H - 2}" width="${CELL_W}" height="2"`
+        : `width="${CELL_W}" height="${LINE_H}"`;
   if (cursor.length === 1) {
     const at = cursor[0]?.value ?? 'hidden';
     if (at !== 'hidden') {
       const [x, y] = at.split(',');
-      screen += `<rect class="cur" x="${x}" y="${y}" ${cursorRect}/>`;
+      const dy = cursorShape === 'underline' ? Number(y) + LINE_H - 2 : y;
+      screen += `<rect class="cur" x="${x}" y="${dy}" ${cursorRect.replace(/y="[^"]*" /, '')}/>`;
     }
   } else {
     // `translate` rather than `transform: translate()`: this timeline has a
