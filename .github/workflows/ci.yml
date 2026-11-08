@@ -79,8 +79,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Without the site: its showcase records real commands with `exec:`,
+      # which does not run on Windows (see the platform notes in the docs).
       - name: Build
-        run: pnpm build
+        run: pnpm -r --workspace-concurrency=1 --filter '!castwright-site' run build
 
       - name: Validate the examples
         run: pnpm exec castwright validate examples/*.terminal.yaml
