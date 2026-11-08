@@ -27,6 +27,15 @@ describe('PLAYER_CSS', () => {
     }
   });
 
+  it('makes the hidden hover controls untouchable until hover or focus', () => {
+    expect(PLAYER_CSS).toMatch(
+      /\[data-controls="hover"\] \.castwright-transport\s*{[^}]*pointer-events:\s*none/,
+    );
+    expect(PLAYER_CSS).toMatch(
+      /:focus-within \.castwright-transport\s*{[^}]*pointer-events:\s*auto/,
+    );
+  });
+
   it('keeps the host defaults overridable by any page rule', () => {
     expect(PLAYER_CSS).toMatch(/:where\(castwright-demo\)\s*{[^}]*--castwright-radius/);
     expect(PLAYER_CSS).not.toMatch(/^castwright-demo\s*{/m);

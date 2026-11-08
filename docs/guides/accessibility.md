@@ -39,7 +39,9 @@ component's slot content (the build warns when it is missing).
 
 Under `prefers-reduced-motion: reduce` the player skips the animation and shows the final
 frame immediately. The controls stay, for anyone who set that preference for other reasons
-and does want to watch this particular thing play.
+and does want to watch this particular thing play. The preference is also followed at
+run time: switching it on while a demo is playing (or looping) stops the demo and shows the
+final frame.
 
 The animated SVG export does the same with CSS alone: under `prefers-reduced-motion:
 reduce` every timeline is paused on the finished screen. It works inside an `<img>`, where
@@ -67,6 +69,16 @@ Two ways to satisfy it, and the right one depends on the demo:
 `controls="none"` combined with autoplay on something that loops or runs long is the one
 configuration that breaks this. The player checks the cast's real duration and says so in
 the console rather than letting it pass quietly.
+
+## Seek bar and shortcuts
+
+The progress bar is a `role="slider"` named "Seek", focusable with Tab, with
+`aria-valuetext` such as "0:03 of 0:12". Its value attributes change once per second, not
+per frame, so assistive technology is not flooded. The hit area is 24 px tall
+(SC 2.5.8). While focus is inside the demo: Left/Right seek 5 s, Home/End jump to start/end,
+`k` toggles play/pause, and Space does the same on the slider (buttons keep their native
+Space). The shortcuts exist only while focus is inside the demo — never page-wide, in
+line with SC 2.1.4 — and Tab always leaves.
 
 ## The terminal is not a keyboard trap
 

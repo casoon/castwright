@@ -18,6 +18,8 @@ export interface Chrome {
   scaler: HTMLElement;
   playPause: HTMLButtonElement;
   restart: HTMLButtonElement;
+  /** The seek slider (role="slider"); `progressBar` is its fill. */
+  progress: HTMLElement;
   progressBar: HTMLElement;
   time: HTMLElement;
   fallback: HTMLElement;
@@ -85,9 +87,14 @@ export function buildChrome(host: HTMLElement, options: ChromeOptions): Chrome {
 
   const progress = doc.createElement('div');
   progress.className = 'castwright-progress';
-  // Visual only. A progress bar updated 60×/s would spam assistive technology
-  // with no benefit — the fallback text is the accessible content.
-  progress.setAttribute('aria-hidden', 'true');
+  // A real slider, so the position is seekable by pointer and keyboard. Its
+  // value attributes are updated once per whole second, not per frame, so
+  // assistive technology is not flooded (see render() in player.ts).
+  progress.setAttribute('role', 'slider');
+  progress.setAttribute('tabindex', '0');
+  progress.setAttribute('aria-label', 'Seek');
+  progress.setAttribute('aria-valuemin', '0');
+  progress.setAttribute('aria-valuenow', '0');
   const progressBar = doc.createElement('div');
   progressBar.className = 'castwright-progress-bar';
   progress.appendChild(progressBar);
@@ -103,7 +110,7 @@ export function buildChrome(host: HTMLElement, options: ChromeOptions): Chrome {
   if (options.controls !== 'none') host.append(transport);
   host.append(fallback);
 
-  return { root: host, screen, scaler, playPause, restart, progressBar, time, fallback };
+  return { root: host, screen, scaler, playPause, restart, progress, progressBar, time, fallback };
 }
 
 export function formatClock(seconds: number): string {
