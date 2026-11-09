@@ -15,7 +15,7 @@
   "dependencies": {
     "@casoon/castwright": "workspace:*",
     "@casoon/castwright-player": "workspace:*",
-    "@casoon/chartlet": "^0.21.0",
+    "@casoon/chartlet": "^0.23.0",
     "@casoon/pages-theme": "^0.12.6",
     "astro": "^7.4.7"
   },
