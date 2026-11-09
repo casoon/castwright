@@ -5,7 +5,7 @@
   "description": "You write a terminal scene as a .terminal.yaml file. Commands that should show real output run once with --allow-exec --record, which writes what they printed back into the file; a VHS .tape builds the same way. castwright compiles the scene to asciicast v2, the same bytes on every build. That one cast plays in the web player, exports to an animated SVG without script, and to GIF or MP4 through agg and ffmpeg.",
   "source": "packages/core/src/parser, compiler, exec, tape, exporters, cli/formats.ts; packages/player",
   "width": 1000,
-  "height": 280,
+  "height": 296,
   "flow": {
     "nodes": [
       {
