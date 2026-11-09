@@ -15,14 +15,14 @@
   "dependencies": {
     "@casoon/castwright": "workspace:*",
     "@casoon/castwright-player": "workspace:*",
-    "@casoon/chartlet": "^0.21.0",
+    "@casoon/chartlet": "^0.23.0",
     "@casoon/pages-theme": "^0.12.6",
-    "astro": "^7.4.4"
+    "astro": "^7.4.7"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
-    "@playwright/test": "^1.64.1",
-    "@types/node": "^24.19.2",
+    "@playwright/test": "^1.65.0",
+    "@types/node": "^26.0.0",
     "typescript": "^6.0.3"
   },
   "pnpm": {
