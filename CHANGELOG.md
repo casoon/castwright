@@ -5,6 +5,11 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Changed
+
+- **Pages:** the project site uses the current shared theme (0.12.8).
+
+
 ## [0.6.0] - 2026-11-08
 
 ### Breaking
