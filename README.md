@@ -253,6 +253,10 @@ key is a breaking change, and every new key is documented in
 [`meta/decisions.md`](meta/decisions.md) explains why the project is shaped the way it
 is — worth a look before proposing anything structural.
 
+## Author
+
+Built and maintained by [Jörn Seidel](https://www.casoon.de/joern-seidel/) ([CASOON](https://www.casoon.de/)). Background and design decisions are described in an article on Insights (in German): [castwright: Terminal-Demos als Text statt als GIF](https://insights.casoon.de/artikel/castwright-terminal-demos-yaml-asciicast/).
+
 ## License
 
 MIT © CASOON
